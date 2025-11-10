@@ -1,11 +1,11 @@
 // app/api/reports/route.js
 import { NextResponse } from 'next/server';
 import connectDB from '../../../lib/mongodb';
-import { Sale } from '../../../lib/models/Sale';
-import { Purchase } from '../../../lib/models/Purchase';
+import  Sale  from '../../../lib/models/Sale';
+import  Purchase  from '../../../lib/models/Purchase';
 import Product from '../../../lib/models/Product';
-import { Customer } from '../../../lib/models/Customer';
-import { Expense } from '../../../lib/models/Expense';
+import  Customer  from '../../../lib/models/Customer';
+import  Expense  from '../../../lib/models/Expense';
 
 export async function GET(request) {
   try {

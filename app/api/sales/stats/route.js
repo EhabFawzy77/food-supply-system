@@ -1,5 +1,8 @@
-
 // app/api/sales/stats/route.js
+import { NextResponse } from 'next/server';
+import connectDB from '../../../../lib/mongodb';
+import Sale from '../../../../lib/models/Sale';
+
 export async function GET(request) {
   try {
     await connectDB();
@@ -12,6 +15,8 @@ export async function GET(request) {
     
     if (period === 'yesterday') {
       startDate.setDate(startDate.getDate() - 1);
+      const endDate = new Date(startDate);
+      endDate.setHours(23, 59, 59, 999);
     } else if (period === 'week') {
       startDate.setDate(startDate.getDate() - 7);
     } else if (period === 'month') {
@@ -24,21 +29,40 @@ export async function GET(request) {
       saleDate: { $gte: startDate }
     }).populate('items.product');
     
+    // حساب الإجماليات
     const totalSales = sales.reduce((sum, s) => sum + s.total, 0);
-    const totalProfit = sales.reduce((sum, s) => {
-      return sum + s.items.reduce((itemSum, item) => {
-        const profit = (item.unitPrice - item.product.purchasePrice) * item.quantity;
-        return itemSum + profit;
-      }, 0);
-    }, 0);
     
-    const cashSales = sales.filter(s => s.paymentMethod === 'cash')
+    // حساب الربح
+    let totalProfit = 0;
+    let totalCost = 0;
+    
+    sales.forEach(sale => {
+      sale.items.forEach(item => {
+        if (item.product && item.product.purchasePrice) {
+          const cost = item.product.purchasePrice * item.quantity;
+          const revenue = item.unitPrice * item.quantity;
+          totalCost += cost;
+          totalProfit += (revenue - cost);
+        }
+      });
+    });
+    
+    // حساب المبيعات حسب طريقة الدفع
+    const cashSales = sales
+      .filter(s => s.paymentMethod === 'cash')
       .reduce((sum, s) => sum + s.total, 0);
     
-    const creditSales = sales.filter(s => s.paymentMethod === 'credit')
+    const creditSales = sales
+      .filter(s => s.paymentMethod === 'credit')
       .reduce((sum, s) => sum + s.total, 0);
     
-    const pendingPayments = sales.filter(s => s.paymentStatus !== 'paid')
+    const bankTransferSales = sales
+      .filter(s => s.paymentMethod === 'bank_transfer')
+      .reduce((sum, s) => sum + s.total, 0);
+    
+    // حساب المدفوعات المعلقة
+    const pendingPayments = sales
+      .filter(s => s.paymentStatus !== 'paid')
       .reduce((sum, s) => sum + (s.total - s.paidAmount), 0);
     
     return NextResponse.json({
@@ -46,14 +70,18 @@ export async function GET(request) {
       data: {
         totalSales,
         totalProfit,
+        totalCost,
         cashSales,
         creditSales,
+        bankTransferSales,
         pendingPayments,
         transactions: sales.length,
-        averageTransaction: sales.length > 0 ? totalSales / sales.length : 0
+        averageTransaction: sales.length > 0 ? totalSales / sales.length : 0,
+        profitMargin: totalSales > 0 ? (totalProfit / totalSales) * 100 : 0
       }
     });
   } catch (error) {
+    console.error('Error in GET /api/sales/stats:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

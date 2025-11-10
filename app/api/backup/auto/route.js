@@ -1,6 +1,9 @@
-
 // app/api/backup/auto/route.js
 // النسخ الاحتياطي التلقائي
+import { NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
+import connectDB from '../../../lib/mongodb';
 export async function POST(request) {
   try {
     await connectDB();

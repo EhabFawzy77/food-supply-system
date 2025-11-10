@@ -1,9 +1,9 @@
 // app/api/purchases/route.js
 import { NextResponse } from 'next/server';
 import connectDB from '../../../lib/mongodb';
-import { Purchase } from '../../../lib/models/Purchase';
-import { Stock } from '../../../lib/models/Stock';
-import { StockMovement } from '../../../lib/models/StockMovement';
+import  Purchase  from '../../../lib/models/Purchase';
+import  Stock  from '../../../lib/models/Stock';
+import  StockMovement  from '../../../lib/models/StockMovement';
 import Product from '../../../lib/models/Product';
 
 // GET - جلب كل المشتريات

@@ -1,4 +1,9 @@
 // app/api/settings/[key]/route.js
+import { NextResponse } from 'next/server';
+import connectDB from '../../../../lib/mongodb';
+import Settings from '../../../../lib/models/Settings';
+
+// GET - جلب إعداد واحد
 export async function GET(request, { params }) {
   try {
     await connectDB();
@@ -17,6 +22,7 @@ export async function GET(request, { params }) {
       data: setting.value 
     });
   } catch (error) {
+    console.error('Error in GET /api/settings/[key]:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -24,12 +30,12 @@ export async function GET(request, { params }) {
   }
 }
 
+// PUT - تحديث إعداد
 export async function PUT(request, { params }) {
   try {
     await connectDB();
     
     const body = await request.json();
-    const userId = request.user?.userId;
     
     const setting = await Settings.findOneAndUpdate(
       { key: params.key },
@@ -38,7 +44,7 @@ export async function PUT(request, { params }) {
         category: body.category || 'general',
         description: body.description,
         updatedAt: new Date(),
-        updatedBy: userId
+        updatedBy: body.updatedBy
       },
       { upsert: true, new: true }
     );
@@ -48,9 +54,38 @@ export async function PUT(request, { params }) {
       data: setting 
     });
   } catch (error) {
+    console.error('Error in PUT /api/settings/[key]:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
+    );
+  }
+}
+
+// DELETE - حذف إعداد
+export async function DELETE(request, { params }) {
+  try {
+    await connectDB();
+    
+    const setting = await Settings.findOneAndDelete({ key: params.key });
+    
+    if (!setting) {
+      return NextResponse.json(
+        { success: false, error: 'الإعداد غير موجود' },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json({ 
+      success: true, 
+      message: 'تم حذف الإعداد بنجاح',
+      data: {} 
+    });
+  } catch (error) {
+    console.error('Error in DELETE /api/settings/[key]:', error);
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 400 }
     );
   }
 }

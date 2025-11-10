@@ -1,4 +1,10 @@
 // app/api/payments/stats/route.js
+import { NextResponse } from 'next/server';
+import connectDB from '../../../../lib/mongodb';
+import Payment from '../../../../lib/models/Payment';
+import Sale from '../../../../lib/models/Sale';
+import Purchase from '../../../../lib/models/Purchase';
+
 export async function GET(request) {
   try {
     await connectDB();
@@ -15,21 +21,24 @@ export async function GET(request) {
       startDate.setMonth(startDate.getMonth() - 1);
     }
     
+    // جلب المدفوعات في الفترة المحددة
     const payments = await Payment.find({
       transactionDate: { $gte: startDate }
     });
     
+    // حساب المقبوضات (من المبيعات)
     const received = payments
       .filter(p => p.type === 'sale')
       .reduce((sum, p) => sum + p.amount, 0);
     
+    // حساب المدفوعات (للمشتريات)
     const paid = payments
       .filter(p => p.type === 'purchase')
       .reduce((sum, p) => sum + p.amount, 0);
     
-    // حساب المدفوعات المعلقة
+    // حساب المدفوعات المعلقة (الديون)
     const unpaidSales = await Sale.find({
-      paymentStatus: { $ne: 'paid' }
+      paymentStatus: { $in: ['unpaid', 'partial'] }
     });
     
     const pendingReceivables = unpaidSales.reduce(
@@ -38,7 +47,7 @@ export async function GET(request) {
     );
     
     const unpaidPurchases = await Purchase.find({
-      paymentStatus: { $ne: 'paid' }
+      paymentStatus: { $in: ['unpaid', 'partial'] }
     });
     
     const pendingPayables = unpaidPurchases.reduce(
@@ -53,10 +62,14 @@ export async function GET(request) {
         paid,
         pendingReceivables,
         pendingPayables,
-        netCashFlow: received - paid
+        netCashFlow: received - paid,
+        paymentsCount: payments.length,
+        receivedCount: payments.filter(p => p.type === 'sale').length,
+        paidCount: payments.filter(p => p.type === 'purchase').length
       }
     });
   } catch (error) {
+    console.error('Error in GET /api/payments/stats:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
