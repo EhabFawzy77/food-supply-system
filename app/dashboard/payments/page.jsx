@@ -19,6 +19,7 @@ export default function PaymentsPage() {
     start: '',
     end: ''
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchPayments();
@@ -26,70 +27,50 @@ export default function PaymentsPage() {
   }, [filterType, dateRange]);
 
   const fetchPayments = async () => {
-    // محاكاة جلب المدفوعات
-    setPayments([
-      {
-        _id: '1',
-        type: 'sale',
-        amount: 5000,
-        paymentMethod: 'cash',
-        referenceNumber: 'INV-001',
-        receivedFrom: 'محل الأمل',
-        transactionDate: '2024-11-09T10:30:00',
-        createdBy: 'أحمد محمود'
-      },
-      {
-        _id: '2',
-        type: 'sale',
-        amount: 3500,
-        paymentMethod: 'bank_transfer',
-        referenceNumber: 'INV-002',
-        receivedFrom: 'سوبر ماركت النور',
-        transactionDate: '2024-11-09T11:15:00',
-        createdBy: 'محمد علي'
-      },
-      {
-        _id: '3',
-        type: 'purchase',
-        amount: 15000,
-        paymentMethod: 'cash',
-        referenceNumber: 'PUR-001',
-        paidTo: 'شركة النيل للتوريدات',
-        transactionDate: '2024-11-09T14:20:00',
-        createdBy: 'أحمد محمود'
-      },
-      {
-        _id: '4',
-        type: 'sale',
-        amount: 2000,
-        paymentMethod: 'check',
-        referenceNumber: 'INV-003',
-        receivedFrom: 'مطعم الفردوس',
-        checkNumber: 'CHK-12345',
-        transactionDate: '2024-11-08T16:45:00',
-        createdBy: 'محمد علي'
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (filterType !== 'all') params.append('type', filterType);
+      if (dateRange.start) params.append('startDate', dateRange.start);
+      if (dateRange.end) params.append('endDate', dateRange.end);
+      
+      const res = await fetch(`/api/payments?${params.toString()}`);
+      const data = await res.json();
+      
+      if (data.success) {
+        setPayments(data.data || []);
       }
-    ]);
+    } catch (error) {
+      console.error('خطأ في جلب المدفوعات:', error);
+      alert('حدث خطأ في جلب البيانات');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchStats = async () => {
-    // محاكاة جلب الإحصائيات
-    setStats({
-      totalReceived: 45230,
-      totalPaid: 28500,
-      pendingReceivables: 8230,
-      pendingPayables: 5000
-    });
+    try {
+      const params = new URLSearchParams();
+      params.append('period', 'month');
+      
+      const res = await fetch(`/api/payments/stats?${params.toString()}`);
+      const data = await res.json();
+      
+      if (data.success) {
+        setStats(data.data);
+      }
+    } catch (error) {
+      console.error('خطأ في جلب الإحصائيات:', error);
+    }
   };
 
   const filteredPayments = payments.filter(payment => {
-    const matchesType = filterType === 'all' || payment.type === filterType;
     const matchesSearch = 
-      payment.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (payment.receivedFrom?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (payment.paidTo?.toLowerCase().includes(searchTerm.toLowerCase()));
+      payment.referenceNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      payment.receivedFrom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      payment.paidTo?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    return matchesType && matchesSearch;
+    return matchesSearch;
   });
 
   const getPaymentMethodBadge = (method) => {
@@ -130,6 +111,17 @@ export default function PaymentsPage() {
     </div>
   );
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600">جاري التحميل...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
       <div className="max-w-7xl mx-auto">
@@ -155,30 +147,28 @@ export default function PaymentsPage() {
           <StatCard
             icon={TrendingUp}
             label="إجمالي المقبوضات"
-            value={stats.totalReceived}
+            value={stats.received || 0}
             color="border-green-600"
-            trend={12.5}
             sublabel="هذا الشهر"
           />
           <StatCard
             icon={TrendingDown}
             label="إجمالي المدفوعات"
-            value={stats.totalPaid}
+            value={stats.paid || 0}
             color="border-red-600"
-            trend={-8.3}
             sublabel="هذا الشهر"
           />
           <StatCard
             icon={Clock}
             label="مستحقات معلقة"
-            value={stats.pendingReceivables}
+            value={stats.pendingReceivables || 0}
             color="border-orange-600"
             sublabel="من العملاء"
           />
           <StatCard
             icon={DollarSign}
             label="التزامات معلقة"
-            value={stats.pendingPayables}
+            value={stats.pendingPayables || 0}
             color="border-purple-600"
             sublabel="للموردين"
           />
@@ -190,10 +180,10 @@ export default function PaymentsPage() {
             <div>
               <div className="text-sm font-semibold mb-2 opacity-90">صافي التدفق النقدي</div>
               <div className="text-4xl font-bold">
-                {(stats.totalReceived - stats.totalPaid).toLocaleString()} جنيه
+                {((stats.received || 0) - (stats.paid || 0)).toLocaleString()} جنيه
               </div>
               <div className="text-sm mt-2 opacity-80">
-                {stats.totalReceived > stats.totalPaid ? 'فائض نقدي' : 'عجز نقدي'}
+                {(stats.received || 0) > (stats.paid || 0) ? 'فائض نقدي' : 'عجز نقدي'}
               </div>
             </div>
             <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
@@ -283,7 +273,6 @@ export default function PaymentsPage() {
                   <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">المبلغ</th>
                   <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">طريقة الدفع</th>
                   <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">التاريخ</th>
-                  <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">المسؤول</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -316,7 +305,7 @@ export default function PaymentsPage() {
                       <div className={`text-lg font-bold ${
                         payment.type === 'sale' ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        {payment.type === 'sale' ? '+' : '-'} {payment.amount.toLocaleString()} جنيه
+                        {payment.type === 'sale' ? '+' : '-'} {(payment.amount || 0).toLocaleString()} جنيه
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -334,9 +323,6 @@ export default function PaymentsPage() {
                       <div className="text-xs text-gray-500">
                         {new Date(payment.transactionDate).toLocaleTimeString('ar-EG')}
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-600">{payment.createdBy}</div>
                     </td>
                   </tr>
                 ))}

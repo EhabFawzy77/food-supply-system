@@ -20,14 +20,8 @@ export default function SalesPage() {
   const [notes, setNotes] = useState('');
   const [showInvoice, setShowInvoice] = useState(false);
   const [lastInvoice, setLastInvoice] = useState(null);
-
-  const translatePayment = (pm) => {
-    if (!pm) return pm;
-    if (pm === 'cash') return 'كاش';
-    if (pm === 'credit') return 'آجل';
-    if (pm === 'bank_transfer') return 'تحويل بنكي';
-    return pm;
-  }
+  const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
@@ -35,25 +29,41 @@ export default function SalesPage() {
     
     if (!token || !userData) {
       router.push('/login');
+      return;
     }
 
-    // محاكاة جلب المنتجات
-    setProducts([
-      { _id: '1', name: 'أرز أبيض', unit: 'كجم', sellingPrice: 25, stock: 500 },
-      { _id: '2', name: 'زيت عباد الشمس', unit: 'لتر', sellingPrice: 45, stock: 200 },
-      { _id: '3', name: 'سكر أبيض', unit: 'كجم', sellingPrice: 30, stock: 300 },
-      { _id: '4', name: 'ملح طعام', unit: 'كجم', sellingPrice: 8, stock: 400 },
-      { _id: '5', name: 'مكرونة', unit: 'كجم', sellingPrice: 18, stock: 250 },
-      { _id: '6', name: 'عسل نحل', unit: 'كجم', sellingPrice: 150, stock: 50 }
-    ]);
-
-    // محاكاة جلب العملاء
-    setCustomers([
-      { _id: '1', name: 'محل الأمل', phone: '01012345678', creditLimit: 50000, currentDebt: 5000 },
-      { _id: '2', name: 'سوبر ماركت النور', phone: '01123456789', creditLimit: 100000, currentDebt: 15000 },
-      { _id: '3', name: 'مطعم الفردوس', phone: '01234567890', creditLimit: 30000, currentDebt: 0 }
-    ]);
+    const user = JSON.parse(userData);
+    setCurrentUser(user);
+    
+    fetchProducts();
+    fetchCustomers();
   }, [router]);
+
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch('/api/products');
+      const data = await res.json();
+      if (data.success) {
+        setProducts(data.data || []);
+      }
+    } catch (error) {
+      console.error('خطأ في جلب المنتجات:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCustomers = async () => {
+    try {
+      const res = await fetch('/api/customers');
+      const data = await res.json();
+      if (data.success) {
+        setCustomers(data.data || []);
+      }
+    } catch (error) {
+      console.error('خطأ في جلب العملاء:', error);
+    }
+  };
 
   const addToCart = (product) => {
     const existingItem = cart.find(item => item._id === product._id);
@@ -120,14 +130,16 @@ export default function SalesPage() {
   };
 
   const completeSale = async () => {
-    if (!canCompleteSale()) return;
+    if (!canCompleteSale()) {
+      alert('لا يمكن إتمام البيع. تحقق من البيانات المدخلة.');
+      return;
+    }
 
-    const invoiceData = {
+    const saleData = {
       invoiceNumber: `INV-${Date.now()}`,
-      date: new Date().toLocaleDateString('ar-EG'),
-      customer: selectedCustomer.name,
+      customer: selectedCustomer._id,
       items: cart.map(item => ({
-        name: item.name,
+        product: item._id,
         quantity: item.quantity,
         unitPrice: item.sellingPrice,
         total: item.sellingPrice * item.quantity
@@ -135,26 +147,36 @@ export default function SalesPage() {
       subtotal: calculateSubtotal(),
       discount: discount,
       total: calculateTotal(),
-      // send standardized payment method values expected by backend ('cash' | 'credit' | 'bank_transfer')
       paymentMethod: paymentMethod,
       paidAmount: paymentMethod === 'cash' ? parseFloat(paidAmount) : 0,
-      change: calculateChange(),
-      notes: notes
+      paymentStatus: paymentMethod === 'cash' ? 'paid' : 'unpaid',
+      notes: notes,
+      createdBy: currentUser?.id
     };
 
     try {
       const res = await fetch('/api/sales', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(invoiceData)
+        body: JSON.stringify(saleData)
       });
 
-      if (res.ok || res.status === 400) {
-        setLastInvoice(invoiceData);
+      const data = await res.json();
+
+      if (data.success) {
+        setLastInvoice({
+          ...saleData,
+          customer: selectedCustomer.name,
+          date: new Date().toLocaleDateString('ar-EG'),
+          change: calculateChange()
+        });
         setShowInvoice(true);
+      } else {
+        alert('خطأ: ' + (data.error || 'حدث خطأ في إتمام البيع'));
       }
     } catch (error) {
-      alert('حدث خطأ في إتمام البيع');
+      console.error('خطأ في إتمام البيع:', error);
+      alert('حدث خطأ في الاتصال بالخادم');
     }
   };
 
@@ -171,6 +193,24 @@ export default function SalesPage() {
   const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600">جاري التحميل...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const translatePayment = (pm) => {
+    if (pm === 'cash') return 'كاش';
+    if (pm === 'credit') return 'آجل';
+    if (pm === 'bank_transfer') return 'تحويل بنكي';
+    return pm;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
@@ -211,7 +251,7 @@ export default function SalesPage() {
                     <Package className="w-4 h-4 text-indigo-600" />
                     <div className="font-bold text-gray-800 flex-1">{product.name}</div>
                   </div>
-                  <div className="text-sm text-gray-600 mb-2">المخزون: {product.stock} {product.unit}</div>
+                  <div className="text-sm text-gray-600 mb-2">{product.category}</div>
                   <div className="text-lg font-bold text-indigo-600">{product.sellingPrice} جنيه</div>
                 </button>
               ))}
@@ -250,11 +290,11 @@ export default function SalesPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">حد الائتمان:</span>
-                    <span className="font-semibold text-green-600">{selectedCustomer.creditLimit.toLocaleString()} جنيه</span>
+                    <span className="font-semibold text-green-600">{selectedCustomer.creditLimit?.toLocaleString() || 0} جنيه</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">الديون الحالية:</span>
-                    <span className="font-semibold text-red-600">{selectedCustomer.currentDebt.toLocaleString()} جنيه</span>
+                    <span className="font-semibold text-red-600">{selectedCustomer.currentDebt?.toLocaleString() || 0} جنيه</span>
                   </div>
                 </div>
               )}

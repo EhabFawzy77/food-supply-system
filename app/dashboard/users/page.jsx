@@ -11,6 +11,7 @@ export default function UsersManagementPage() {
   const [editingUser, setEditingUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(true);
   
   const [formData, setFormData] = useState({
     username: '',
@@ -29,56 +30,36 @@ export default function UsersManagementPage() {
   ];
 
   useEffect(() => {
-    // محاكاة جلب المستخدمين
-    setUsers([
-      {
-        _id: '1',
-        username: 'admin',
-        fullName: 'المدير العام',
-        email: 'admin@company.com',
-        phone: '01012345678',
-        role: 'admin',
-        isActive: true,
-        lastLogin: '2024-11-09T10:30:00',
-        createdAt: '2024-01-01'
-      },
-      {
-        _id: '2',
-        username: 'manager1',
-        fullName: 'أحمد محمود',
-        email: 'ahmed@company.com',
-        phone: '01123456789',
-        role: 'manager',
-        isActive: true,
-        lastLogin: '2024-11-09T09:15:00',
-        createdAt: '2024-02-15'
-      },
-      {
-        _id: '3',
-        username: 'user1',
-        fullName: 'محمد علي',
-        email: 'mohamed@company.com',
-        phone: '01234567890',
-        role: 'user',
-        isActive: true,
-        lastLogin: '2024-11-09T08:45:00',
-        createdAt: '2024-03-20'
-      },
-      {
-        _id: '4',
-        username: 'guest1',
-        fullName: 'خالد حسن',
-        email: 'khaled@company.com',
-        phone: '01098765432',
-        role: 'guest',
-        isActive: false,
-        lastLogin: '2024-11-05T14:20:00',
-        createdAt: '2024-04-10'
-      }
-    ]);
+    fetchUsers();
   }, []);
 
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/users');
+      const data = await res.json();
+      if (data.success) {
+        setUsers(data.data || []);
+      }
+    } catch (error) {
+      console.error('خطأ في جلب المستخدمين:', error);
+      alert('حدث خطأ في جلب البيانات');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
+    if (!formData.username || !formData.fullName) {
+      alert('الرجاء إدخال اسم المستخدم والاسم الكامل');
+      return;
+    }
+
+    if (!editingUser && !formData.password) {
+      alert('الرجاء إدخال كلمة المرور');
+      return;
+    }
+
     const url = editingUser 
       ? `/api/users/${editingUser._id}`
       : '/api/auth/register';
@@ -97,10 +78,14 @@ export default function UsersManagementPage() {
       if (data.success) {
         setShowModal(false);
         resetForm();
+        fetchUsers();
         alert(editingUser ? 'تم التحديث بنجاح' : 'تم إضافة المستخدم بنجاح');
+      } else {
+        alert('خطأ: ' + (data.error || 'حدث خطأ'));
       }
     } catch (error) {
-      alert('حدث خطأ في حفظ المستخدم');
+      console.error('خطأ في حفظ المستخدم:', error);
+      alert('حدث خطأ في الاتصال');
     }
   };
 
@@ -112,13 +97,16 @@ export default function UsersManagementPage() {
         body: JSON.stringify({ isActive: !currentStatus })
       });
 
-      if (res.ok) {
-        setUsers(users.map(u => 
-          u._id === userId ? { ...u, isActive: !currentStatus } : u
-        ));
+      const data = await res.json();
+
+      if (data.success) {
+        fetchUsers();
+      } else {
+        alert('خطأ: ' + (data.error || 'حدث خطأ'));
       }
     } catch (error) {
-      alert('حدث خطأ في تغيير حالة المستخدم');
+      console.error('خطأ في تغيير حالة المستخدم:', error);
+      alert('حدث خطأ في الاتصال');
     }
   };
 
@@ -128,8 +116,8 @@ export default function UsersManagementPage() {
       username: user.username,
       password: '',
       fullName: user.fullName,
-      email: user.email,
-      phone: user.phone,
+      email: user.email || '',
+      phone: user.phone || '',
       role: user.role
     });
     setShowModal(true);
@@ -140,12 +128,17 @@ export default function UsersManagementPage() {
     
     try {
       const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setUsers(users.filter(u => u._id !== id));
+      const data = await res.json();
+      
+      if (data.success) {
+        fetchUsers();
         alert('تم حذف المستخدم بنجاح');
+      } else {
+        alert('خطأ: ' + (data.error || 'حدث خطأ'));
       }
     } catch (error) {
-      alert('حدث خطأ في حذف المستخدم');
+      console.error('خطأ في حذف المستخدم:', error);
+      alert('حدث خطأ في الاتصال');
     }
   };
 
@@ -181,12 +174,23 @@ export default function UsersManagementPage() {
   };
 
   const filteredUsers = users.filter(u =>
-    u.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchTerm.toLowerCase())
+    u.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const activeUsers = users.filter(u => u.isActive).length;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600">جاري التحميل...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
@@ -271,7 +275,6 @@ export default function UsersManagementPage() {
                   <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">المستخدم</th>
                   <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">الدور</th>
                   <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">البريد والهاتف</th>
-                  <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">آخر تسجيل دخول</th>
                   <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">الحالة</th>
                   <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">إجراءات</th>
                 </tr>
@@ -283,7 +286,7 @@ export default function UsersManagementPage() {
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
                           <span className="text-indigo-600 font-bold">
-                            {user.fullName.charAt(0)}
+                            {user.fullName?.charAt(0)}
                           </span>
                         </div>
                         <div>
@@ -298,11 +301,6 @@ export default function UsersManagementPage() {
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-600">{user.email}</div>
                       <div className="text-sm text-gray-500">{user.phone}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-600">
-                        {new Date(user.lastLogin).toLocaleString('ar-EG')}
-                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <button
@@ -348,6 +346,13 @@ export default function UsersManagementPage() {
               </tbody>
             </table>
           </div>
+
+          {filteredUsers.length === 0 && (
+            <div className="text-center py-12">
+              <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">لا يوجد مستخدمين</p>
+            </div>
+          )}
         </div>
 
         {/* Add/Edit Modal */}
@@ -365,9 +370,10 @@ export default function UsersManagementPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-gray-700 font-semibold mb-2">اسم المستخدم</label>
+                  <label className="block text-gray-700 font-semibold mb-2">اسم المستخدم *</label>
                   <input
                     type="text"
+                    required
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
@@ -385,6 +391,7 @@ export default function UsersManagementPage() {
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                      required={!editingUser}
                     />
                     <button
                       onClick={() => setShowPassword(!showPassword)}
@@ -397,9 +404,10 @@ export default function UsersManagementPage() {
                 </div>
 
                 <div>
-                  <label className="block text-gray-700 font-semibold mb-2">الاسم الكامل</label>
+                  <label className="block text-gray-700 font-semibold mb-2">الاسم الكامل *</label>
                   <input
                     type="text"
+                    required
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"

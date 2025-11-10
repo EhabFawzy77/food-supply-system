@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Package, AlertTriangle } from 'lucide-react';
+import { Plus, Edit, Trash2, Package, AlertTriangle, Search, X } from 'lucide-react';
 
 export default function ProductsManagement() {
   const [products, setProducts] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -16,27 +18,50 @@ export default function ProductsManagement() {
     purchasePrice: '',
     sellingPrice: '',
     minStockLevel: '',
+    supplier: ''
   });
 
   useEffect(() => {
     fetchProducts();
+    fetchSuppliers();
   }, []);
 
   const fetchProducts = async () => {
     try {
+      setLoading(true);
       const res = await fetch('/api/products');
       const data = await res.json();
       if (data.success) {
-        setProducts(data.data);
+        setProducts(data.data || []);
       }
     } catch (error) {
       console.error('خطأ في جلب المنتجات:', error);
+      alert('حدث خطأ في جلب البيانات');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSuppliers = async () => {
+    try {
+      const res = await fetch('/api/suppliers');
+      const data = await res.json();
+      if (data.success) {
+        setSuppliers(data.data || []);
+      }
+    } catch (error) {
+      console.error('خطأ في جلب الموردين:', error);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    if (!formData.name || !formData.category || !formData.purchasePrice || !formData.sellingPrice) {
+      alert('الرجاء إدخال جميع الحقول المطلوبة');
+      return;
+    }
+
     const url = editingProduct 
       ? `/api/products/${editingProduct._id}`
       : '/api/products';
@@ -56,9 +81,13 @@ export default function ProductsManagement() {
         fetchProducts();
         resetForm();
         setShowModal(false);
+        alert(editingProduct ? 'تم التحديث بنجاح' : 'تم إضافة المنتج بنجاح');
+      } else {
+        alert('خطأ: ' + (data.error || 'حدث خطأ'));
       }
     } catch (error) {
       console.error('خطأ في حفظ المنتج:', error);
+      alert('حدث خطأ في الاتصال');
     }
   };
 
@@ -70,7 +99,8 @@ export default function ProductsManagement() {
       unit: product.unit,
       purchasePrice: product.purchasePrice,
       sellingPrice: product.sellingPrice,
-      minStockLevel: product.minStockLevel,
+      minStockLevel: product.minStockLevel || '',
+      supplier: product.supplier?._id || ''
     });
     setShowModal(true);
   };
@@ -84,9 +114,13 @@ export default function ProductsManagement() {
       
       if (data.success) {
         fetchProducts();
+        alert('تم حذف المنتج بنجاح');
+      } else {
+        alert('خطأ: ' + (data.error || 'حدث خطأ'));
       }
     } catch (error) {
       console.error('خطأ في حذف المنتج:', error);
+      alert('حدث خطأ في الاتصال');
     }
   };
 
@@ -98,19 +132,31 @@ export default function ProductsManagement() {
       purchasePrice: '',
       sellingPrice: '',
       minStockLevel: '',
+      supplier: ''
     });
     setEditingProduct(null);
   };
 
   const filteredProducts = products.filter(p =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.category.toLowerCase().includes(searchTerm.toLowerCase())
+    p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const profitMargin = (purchasePrice, sellingPrice) => {
     if (!purchasePrice || !sellingPrice) return 0;
     return (((sellingPrice - purchasePrice) / purchasePrice) * 100).toFixed(1);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600">جاري التحميل...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6" dir="rtl">
@@ -134,13 +180,16 @@ export default function ProductsManagement() {
             </button>
           </div>
           
-          <input
-            type="text"
-            placeholder="البحث عن منتج..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-          />
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="البحث عن منتج..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pr-12 pl-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
+          </div>
         </div>
 
         {/* Products Grid */}
@@ -189,11 +238,17 @@ export default function ProductsManagement() {
                     {profitMargin(product.purchasePrice, product.sellingPrice)}%
                   </span>
                 </div>
+                {product.supplier && (
+                  <div className="flex justify-between">
+                    <span>المورد:</span>
+                    <span className="font-semibold text-sm">{product.supplier.name}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center pt-2 border-t">
                   <span>الحد الأدنى:</span>
                   <span className="flex items-center gap-1 font-semibold">
                     <AlertTriangle className="w-4 h-4 text-orange-500" />
-                    {product.minStockLevel} {product.unit}
+                    {product.minStockLevel || 0} {product.unit}
                   </span>
                 </div>
               </div>
@@ -201,17 +256,35 @@ export default function ProductsManagement() {
           ))}
         </div>
 
+        {filteredProducts.length === 0 && (
+          <div className="bg-white rounded-lg shadow-lg p-12 text-center">
+            <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg">لا توجد منتجات</p>
+          </div>
+        )}
+
         {/* Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 max-h-screen overflow-y-auto">
-              <h2 className="text-2xl font-bold mb-6 text-gray-800">
-                {editingProduct ? 'تعديل المنتج' : 'إضافة منتج جديد'}
-              </h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">
+                  {editingProduct ? 'تعديل المنتج' : 'إضافة منتج جديد'}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowModal(false);
+                    resetForm();
+                  }}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
               
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-gray-700 mb-2">اسم المنتج</label>
+                  <label className="block text-gray-700 mb-2 font-semibold">اسم المنتج *</label>
                   <input
                     type="text"
                     required
@@ -222,18 +295,19 @@ export default function ProductsManagement() {
                 </div>
 
                 <div>
-                  <label className="block text-gray-700 mb-2">التصنيف</label>
+                  <label className="block text-gray-700 mb-2 font-semibold">التصنيف *</label>
                   <input
                     type="text"
                     required
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    placeholder="مثال: حبوب، زيوت، سكريات"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-gray-700 mb-2">الوحدة</label>
+                  <label className="block text-gray-700 mb-2 font-semibold">الوحدة</label>
                   <select
                     value={formData.unit}
                     onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
@@ -244,12 +318,13 @@ export default function ProductsManagement() {
                     <option value="قطعة">قطعة</option>
                     <option value="كرتونة">كرتونة</option>
                     <option value="علبة">علبة</option>
+                    <option value="كيس">كيس</option>
                   </select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-gray-700 mb-2">سعر الشراء</label>
+                    <label className="block text-gray-700 mb-2 font-semibold">سعر الشراء *</label>
                     <input
                       type="number"
                       step="0.01"
@@ -261,7 +336,7 @@ export default function ProductsManagement() {
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 mb-2">سعر البيع</label>
+                    <label className="block text-gray-700 mb-2 font-semibold">سعر البيع *</label>
                     <input
                       type="number"
                       step="0.01"
@@ -274,13 +349,30 @@ export default function ProductsManagement() {
                 </div>
 
                 <div>
-                  <label className="block text-gray-700 mb-2">الحد الأدنى للمخزون</label>
+                  <label className="block text-gray-700 mb-2 font-semibold">الحد الأدنى للمخزون</label>
                   <input
                     type="number"
                     value={formData.minStockLevel}
                     onChange={(e) => setFormData({ ...formData, minStockLevel: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    placeholder="0"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 mb-2 font-semibold">المورد</label>
+                  <select
+                    value={formData.supplier}
+                    onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="">اختر المورد (اختياري)</option>
+                    {suppliers.map((supplier) => (
+                      <option key={supplier._id} value={supplier._id}>
+                        {supplier.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="flex gap-3 pt-4">
