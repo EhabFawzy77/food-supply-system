@@ -171,11 +171,13 @@ export default function SalesPage() {
     }
 
     const saleData = {
+      invoiceNumber: `INV-${Date.now()}`,
       customer: selectedCustomer._id,
       items: cart.map(item => ({
         product: item._id,
         quantity: item.quantity,
-        unitPrice: item.sellingPrice
+        unitPrice: item.sellingPrice,
+        total: item.quantity * item.sellingPrice
       })),
       subtotal: calculateSubtotal(),
       discount: discount,
@@ -185,6 +187,7 @@ export default function SalesPage() {
       paidAmount: paidAmountNum,
       notes: notes,
       createdBy: currentUser._id || null
+      // tax is optional, defaults to 0 in backend
     };
 
     try {
@@ -202,7 +205,7 @@ export default function SalesPage() {
         setShowInvoice(true);
         resetSale();
       } else {
-        alert(`خطأ: ${result.message || 'فشل إتمام البيع'}`);
+        alert(`خطأ: ${result.error || result.message || 'فشل إتمام البيع'}`);
       }
     } catch (error) {
       console.error('خطأ في إتمام البيع:', error);
@@ -227,7 +230,7 @@ export default function SalesPage() {
         setShowCancelConfirm(false);
         setLastSaleId(null);
       } else {
-        alert(`خطأ: ${result.message || 'فشل إلغاء الدفع'}`);
+        alert(`خطأ: ${result.error || result.message || 'فشل إلغاء الدفع'}`);
       }
     } catch (error) {
       console.error('خطأ في إلغاء الدفع:', error);

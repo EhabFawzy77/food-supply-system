@@ -67,9 +67,7 @@ export default function LoginPage() {
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 animate-fadeIn">
         {/* Logo & Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full mb-4 shadow-lg">
-            <ShoppingCart className="w-10 h-10 text-white" />
-          </div>
+          <img src="/logo.png" alt="Logo" className="w-20 h-20 mx-auto mb-4 rounded-full shadow-lg object-cover" />
           <h1 className="text-3xl font-bold text-gray-800 mb-2">نظام إدارة المبيعات</h1>
           <p className="text-gray-600">شركة التوريدات الغذائية</p>
         </div>
