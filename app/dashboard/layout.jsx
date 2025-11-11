@@ -1,15 +1,35 @@
 // app/(dashboard)/layout.jsx
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '../../contexts/AppContext';
+import { useEffect } from 'react';
 import Sidebar from '../../components/Dashboard/Sidebar';
 import Header from '../../components/Dashboard/Header';
 
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
-  const { user, loading } = useApp();
+  const router = useRouter();
+  const { user, loading, updateUserPermissions } = useApp();
+
+  // تحديث بيانات المستخدم الصلاحيات تلقائياً عند التحميل
+  useEffect(() => {
+    if (user && !loading) {
+      const userData = localStorage.getItem('currentUser');
+      if (userData) {
+        try {
+          const parsedUser = JSON.parse(userData);
+          // تحديث الصلاحيات إذا كانت مختلفة
+          if (JSON.stringify(parsedUser.permissions) !== JSON.stringify(user.permissions)) {
+            updateUserPermissions(parsedUser.permissions);
+          }
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+        }
+      }
+    }
+  }, [user, loading, updateUserPermissions]);
 
   if (loading) {
     return (
@@ -20,6 +40,12 @@ export default function DashboardLayout({ children }) {
         </div>
       </div>
     );
+  }
+
+  // التحقق من تسجيل الدخول
+  if (!user) {
+    router.push('/login');
+    return null;
   }
 
   return (

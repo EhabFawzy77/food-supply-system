@@ -72,6 +72,14 @@ export function AppProvider({ children }) {
     router.push('/login');
   };
 
+  const updateUserPermissions = (permissions) => {
+    if (user) {
+      const updatedUser = { ...user, permissions };
+      setUser(updatedUser);
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+    }
+  };
+
   const addNotification = (notification) => {
     const id = Date.now().toString();
     setNotifications(prev => [...prev, { id, ...notification }]);
@@ -93,6 +101,7 @@ export function AppProvider({ children }) {
     loading,
     login,
     logout,
+    updateUserPermissions,
     notifications,
     addNotification,
     removeNotification
