@@ -85,18 +85,30 @@ export function AppProvider({ children }) {
 
   const addNotification = (notification) => {
     const id = Date.now().toString();
+    const duration = notification.duration || 5000;
     setNotifications(prev => [...prev, { id, ...notification }]);
     
-    // إزالة تلقائية بعد 5 ثواني
+    // إزالة تلقائية بعد المدة المحددة
     setTimeout(() => {
       removeNotification(id);
-    }, 5000);
+    }, duration);
     
     return id;
   };
 
   const removeNotification = (id) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const notificationHelpers = {
+    success: (message, title = '✓ نجح', options = {}) => 
+      addNotification({ type: 'success', title, message, ...options }),
+    error: (message, title = '✗ خطأ', options = {}) => 
+      addNotification({ type: 'error', title, message, ...options }),
+    warning: (message, title = '⚠ تحذير', options = {}) => 
+      addNotification({ type: 'warning', title, message, ...options }),
+    info: (message, title = 'ℹ معلومة', options = {}) => 
+      addNotification({ type: 'info', title, message, ...options })
   };
 
   const value = {
@@ -107,7 +119,8 @@ export function AppProvider({ children }) {
     updateUserPermissions,
     notifications,
     addNotification,
-    removeNotification
+    removeNotification,
+    ...notificationHelpers
   };
 
   return (

@@ -1,7 +1,7 @@
 // app/api/suppliers/route.js
 import { NextResponse } from 'next/server';
-import connectDB from '../../../lib/mongodb';
-import Supplier from '../../../lib/models/Supplier';
+import connectDB from '../../../lib/mongodb.js';
+import Supplier from '../../../lib/models/Supplier.js';
 
 // GET - جلب كل الموردين
 export async function GET(request) {

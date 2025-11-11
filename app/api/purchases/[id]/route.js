@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import connectDB from '../../../../lib/mongodb';
-import Purchase from '../../../../lib/models/Purchase';
+import Purchase from '../../../../lib/models/Purchase.js';
 
 export async function GET(request, { params }) {
   try {

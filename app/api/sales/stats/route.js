@@ -1,8 +1,8 @@
 // app/api/sales/stats/route.js
 import { NextResponse } from 'next/server';
 import connectDB from '../../../../lib/mongodb';
-import Sale from '../../../../lib/models/Sale';
-import Product from '../../../../lib/models/Product'; // ensure model is registered for populate
+import Sale from '../../../../lib/models/Sale.js';
+import Product from '../../../../lib/models/Product.js'; // ensure model is registered for populate
 
 export async function GET(request) {
   try {

@@ -1,7 +1,7 @@
 // app/api/sales/[id]/route.js
 import { NextResponse } from 'next/server';
 import connectDB from '../../../../lib/mongodb';
-import Sale from '../../../../lib/models/Sale';
+import Sale from '../../../../lib/models/Sale.js';
 
 export async function GET(request, { params }) {
   try {

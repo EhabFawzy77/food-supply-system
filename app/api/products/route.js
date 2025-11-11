@@ -1,7 +1,7 @@
 // app/api/products/route.js
 import { NextResponse } from 'next/server';
-import connectDB from '../../../lib/mongodb';
-import Product from '../../../lib/models/Product';
+import connectDB from '../../../lib/mongodb.js';
+import Product from '../../../lib/models/Product.js';
 
 // GET - جلب كل المنتجات
 export async function GET(request) {

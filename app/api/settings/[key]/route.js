@@ -1,7 +1,7 @@
 // app/api/settings/[key]/route.js
 import { NextResponse } from 'next/server';
 import connectDB from '../../../../lib/mongodb';
-import Settings from '../../../../lib/models/Settings';
+import Settings from '../../../../lib/models/Settings.js';
 
 // GET - جلب إعداد واحد
 export async function GET(request, { params }) {

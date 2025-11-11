@@ -1,10 +1,10 @@
 // app/api/sales/route.js
 import { NextResponse } from 'next/server';
-import connectDB from '../../../lib/mongodb';
-import Sale from '../../../lib/models/Sale';
-import Stock from '../../../lib/models/Stock';
-import StockMovement from '../../../lib/models/StockMovement';
-import Customer from '../../../lib/models/Customer';
+import connectDB from '../../../lib/mongodb.js';
+import Sale from '../../../lib/models/Sale.js';
+import Stock from '../../../lib/models/Stock.js';
+import StockMovement from '../../../lib/models/StockMovement.js';
+import Customer from '../../../lib/models/Customer.js';
 
 // GET - جلب كل المبيعات
 export async function GET(request) {

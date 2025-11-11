@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import connectDB from '../../../lib/mongodb';
-import Stock from '../../../lib/models/Stock';
-import Product from '../../../lib/models/Product';
+import connectDB from '../../../lib/mongodb.js';
+import Stock from '../../../lib/models/Stock.js';
+import Product from '../../../lib/models/Product.js';
 
 // GET - جلب كل المخزون
 export async function GET(request) {

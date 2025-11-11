@@ -1,9 +1,9 @@
 // app/api/payments/stats/route.js
 import { NextResponse } from 'next/server';
 import connectDB from '../../../../lib/mongodb';
-import Payment from '../../../../lib/models/Payment';
-import Sale from '../../../../lib/models/Sale';
-import Purchase from '../../../../lib/models/Purchase';
+import Payment from '../../../../lib/models/Payment.js';
+import Sale from '../../../../lib/models/Sale.js';
+import Purchase from '../../../../lib/models/Purchase.js';
 
 export async function GET(request) {
   try {

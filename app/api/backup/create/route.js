@@ -1,16 +1,16 @@
 // app/api/backup/create/route.js
 import { NextResponse } from 'next/server';
-import connectDB from '../../../lib/mongodb';
-import User from '../../../lib/models/User';
-import Product from '../../../lib/models/Product';
-import  Stock  from '../../../lib/models/Stock';
-import  Sale  from '../../../lib/models/Sale';
-import  Purchase  from '../../../lib/models/Purchase';
-import  Customer  from '../../../lib/models/Customer';
-import  Supplier  from '../../../lib/models/Supplier';
-import  Payment  from '../../../lib/models/Payment';
-import  Expense  from '../../../lib/models/Expense';
-import StockMovement from '../../../lib/models/StockMovement';
+import connectDB from '../../../../lib/mongodb';
+import User from '../../../../lib/models/User.js';
+import Product from '../../../../lib/models/Product.js';
+import Stock from '../../../../lib/models/Stock.js';
+import Sale from '../../../../lib/models/Sale.js';
+import Purchase from '../../../../lib/models/Purchase.js';
+import Customer from '../../../../lib/models/Customer.js';
+import Supplier from '../../../../lib/models/Supplier.js';
+import Payment from '../../../../lib/models/Payment.js';
+import Expense from '../../../../lib/models/Expense.js';
+import StockMovement from '../../../../lib/models/StockMovement.js';
 
 export async function POST(request) {
   try {

@@ -1,7 +1,7 @@
 // app/api/products/[id]/route.js
 import { NextResponse } from 'next/server';
 import connectDB from '../../../../lib/mongodb';
-import Product from '../../../../lib/models/Product';
+import Product from '../../../../lib/models/Product.js';
 export async function PUT(request, { params }) {
   try {
     await connectDB();

@@ -5,8 +5,10 @@ import {
   ShoppingCart, Plus, Minus, Trash2, Search, Users, 
   CreditCard, Banknote, Printer, Calculator, Check, X, AlertCircle
 } from 'lucide-react';
+import { useApp } from '../../../contexts/AppContext.jsx';
 
 export default function SalesPage() {
+  const { success, error: showError, warning } = useApp();
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -31,15 +33,20 @@ export default function SalesPage() {
       const productsData = await productsRes.json();
       if (productsData.success) {
         setProducts(productsData.data || []);
+      } else {
+        showError('فشل جلب المنتجات', '❌ خطأ في جلب البيانات');
       }
 
       const customersRes = await fetch('/api/customers');
       const customersData = await customersRes.json();
       if (customersData.success) {
         setCustomers(customersData.data || []);
+      } else {
+        showError('فشل جلب العملاء', '❌ خطأ في جلب البيانات');
       }
     } catch (error) {
       console.error('خطأ في جلب البيانات:', error);
+      showError('حدث خطأ في الاتصال بالخادم', '❌ خطأ في جلب البيانات');
     }
   };
 
@@ -203,13 +210,20 @@ export default function SalesPage() {
         setLastSaleId(result.data._id);
         setLastPaymentMethod(paymentMethod);
         setShowInvoice(true);
+        
+        // إظهار إشعار النجاح
+        success(`تم البيع بنجاح! الإجمالي: ${total.toLocaleString()} جنيه`, '✓ تم إتمام البيع', {
+          duration: 4000
+        });
+        
         resetSale();
       } else {
-        alert(`خطأ: ${result.error || result.message || 'فشل إتمام البيع'}`);
+        const errorMsg = result.error || result.message || 'فشل إتمام البيع';
+        showError(errorMsg, '❌ خطأ في البيع');
       }
     } catch (error) {
       console.error('خطأ في إتمام البيع:', error);
-      alert('حدث خطأ في إتمام البيع');
+      showError('حدث خطأ في الاتصال بالخادم', '❌ خطأ في الاتصال');
     }
   };
 
@@ -225,16 +239,17 @@ export default function SalesPage() {
       const result = await res.json();
 
       if (result.success) {
-        alert('تم إلغاء الدفع بنجاح');
+        success('تم إلغاء الدفع بنجاح', '✓ تم الإلغاء');
         setShowInvoice(false);
         setShowCancelConfirm(false);
         setLastSaleId(null);
       } else {
-        alert(`خطأ: ${result.error || result.message || 'فشل إلغاء الدفع'}`);
+        const errorMsg = result.error || result.message || 'فشل إلغاء الدفع';
+        showError(errorMsg, '❌ خطأ في الإلغاء');
       }
     } catch (error) {
       console.error('خطأ في إلغاء الدفع:', error);
-      alert('حدث خطأ في إلغاء الدفع');
+      showError('حدث خطأ في الاتصال بالخادم', '❌ خطأ في الاتصال');
     }
   };
 

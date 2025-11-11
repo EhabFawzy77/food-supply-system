@@ -1,7 +1,7 @@
 // app/api/auth/login/route.js
 import { NextResponse } from 'next/server';
 import connectDB from "../../../../lib/mongodb";
-import User from '../../../../lib/models/User';
+import User from '../../../../lib/models/User.js';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';

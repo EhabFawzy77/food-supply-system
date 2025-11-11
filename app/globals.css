@@ -80,14 +80,46 @@ body {
 @keyframes slideIn {
   from {
     transform: translateX(100%);
+    opacity: 0;
   }
   to {
     transform: translateX(0);
+    opacity: 1;
   }
 }
 
 .animate-slide-in {
   animation: slideIn 0.3s ease-out;
+}
+
+/* Notification slide-out animation */
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+}
+
+.animate-slide-out {
+  animation: slideOut 0.3s ease-in forwards;
+}
+
+/* Progress bar animation */
+@keyframes shrink {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+.animate-shrink {
+  animation: shrink linear;
 }
 
 /* Loading spinner */

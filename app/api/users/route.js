@@ -1,7 +1,7 @@
 // app/api/users/route.js
 import { NextResponse } from 'next/server';
-import connectDB from '../../../lib/mongodb';
-import User from '../../../lib/models/User';
+import connectDB from '../../../lib/mongodb.js';
+import User from '../../../lib/models/User.js';
 
 // GET - جلب جميع المستخدمين
 export async function GET(request) {

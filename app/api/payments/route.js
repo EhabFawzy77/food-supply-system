@@ -1,11 +1,11 @@
 // app/api/payments/route.js
 import { NextResponse } from 'next/server';
-import connectDB from '../../../lib/mongodb';
-import Payment from '../../../lib/models/Payment';
-import Sale from '../../../lib/models/Sale';
-import Purchase from '../../../lib/models/Purchase';
-import Customer from '../../../lib/models/Customer';
-import Supplier from '../../../lib/models/Supplier';
+import connectDB from '../../../lib/mongodb.js';
+import Payment from '../../../lib/models/Payment.js';
+import Sale from '../../../lib/models/Sale.js';
+import Purchase from '../../../lib/models/Purchase.js';
+import Customer from '../../../lib/models/Customer.js';
+import Supplier from '../../../lib/models/Supplier.js';
 
 // GET - جلب كل المدفوعات
 export async function GET(request) {

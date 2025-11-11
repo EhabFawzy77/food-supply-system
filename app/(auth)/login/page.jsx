@@ -6,7 +6,7 @@ import { useApp } from '../../../contexts/AppContext';
 import { LogoWithText } from '../../../components/Logo';
 
 export default function LoginPage() {
-  const { login, user, loading } = useApp();
+  const { login, user, loading, success, error: showError } = useApp();
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -33,11 +33,17 @@ export default function LoginPage() {
       console.log('نتيجة تسجيل الدخول:', result);
       
       if (!result.success) {
-        setError(result.error || 'حدث خطأ غير معروف');
+        const errorMsg = result.error || 'حدث خطأ غير معروف';
+        setError(errorMsg);
+        showError(errorMsg, '❌ فشل تسجيل الدخول');
+      } else {
+        success('تم تسجيل الدخول بنجاح!', '✓ مرحباً');
       }
     } catch (err) {
       console.error('خطأ في تسجيل الدخول:', err);
-      setError('حدث خطأ في الاتصال');
+      const errorMsg = 'حدث خطأ في الاتصال';
+      setError(errorMsg);
+      showError(errorMsg, '❌ خطأ في الاتصال');
     } finally {
       setIsLoading(false);
     }
