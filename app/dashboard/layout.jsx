@@ -13,23 +13,29 @@ export default function DashboardLayout({ children }) {
   const router = useRouter();
   const { user, loading, updateUserPermissions } = useApp();
 
-  // تحديث بيانات المستخدم الصلاحيات تلقائياً عند التحميل
+  // التحقق من تسجيل الدخول وتحديث الصلاحيات
   useEffect(() => {
-    if (user && !loading) {
-      const userData = localStorage.getItem('currentUser');
-      if (userData) {
-        try {
-          const parsedUser = JSON.parse(userData);
-          // تحديث الصلاحيات إذا كانت مختلفة
-          if (JSON.stringify(parsedUser.permissions) !== JSON.stringify(user.permissions)) {
-            updateUserPermissions(parsedUser.permissions);
+    if (!loading) {
+      if (!user) {
+        // إذا لم يكن هناك مستخدم، أعد التوجيه إلى الدخول
+        router.push('/login');
+      } else {
+        // تحديث الصلاحيات من localStorage
+        const userData = localStorage.getItem('currentUser');
+        if (userData) {
+          try {
+            const parsedUser = JSON.parse(userData);
+            // تحديث الصلاحيات إذا كانت مختلفة
+            if (JSON.stringify(parsedUser.permissions) !== JSON.stringify(user.permissions)) {
+              updateUserPermissions(parsedUser.permissions);
+            }
+          } catch (error) {
+            console.error('Error parsing user data:', error);
           }
-        } catch (error) {
-          console.error('Error parsing user data:', error);
         }
       }
     }
-  }, [user, loading, updateUserPermissions]);
+  }, [loading, user, router, updateUserPermissions]);
 
   if (loading) {
     return (
@@ -42,9 +48,8 @@ export default function DashboardLayout({ children }) {
     );
   }
 
-  // التحقق من تسجيل الدخول
+  // إذا لم يكن هناك مستخدم، لا تعرض الـ Dashboard
   if (!user) {
-    router.push('/login');
     return null;
   }
 
