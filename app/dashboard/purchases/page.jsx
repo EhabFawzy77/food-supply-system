@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Plus, Edit, Trash2, ShoppingBag, Truck, Calendar, DollarSign } from 'lucide-react';
 
 export default function PurchasesPage() {
@@ -11,16 +12,31 @@ export default function PurchasesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   
   const [formData, setFormData] = useState({
+    invoiceNumber: '',
     supplier: '',
     purchaseDate: new Date().toISOString().split('T')[0],
     paymentStatus: 'unpaid',
-    items: [{ product: '', quantity: '' }],
+    items: [{ product: '', quantity: '', unitPrice: '', total: '' }],
+    tax: 0,
+    subtotal: 0,
+    total: 0,
     notes: ''
   });
 
   useEffect(() => {
     fetchAllData();
   }, []);
+
+  // حساب الإجماليات
+  const calculateTotals = (items, tax = 0) => {
+    const subtotal = items.reduce((sum, item) => {
+      const itemTotal = parseFloat(item.total || 0);
+      return sum + itemTotal;
+    }, 0);
+    
+    const total = subtotal + tax;
+    return { subtotal, total };
+  };
 
   const fetchAllData = async () => {
     try {
@@ -45,10 +61,27 @@ export default function PurchasesPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.supplier || formData.items.some(i => !i.product || !i.quantity)) {
-      alert('أكمل جميع البيانات المطلوبة');
+    if (!formData.supplier || formData.items.some(i => !i.product || !i.quantity || !i.unitPrice)) {
+      alert('أكمل جميع البيانات المطلوبة (المورد، المنتج، الكمية، السعر)');
       return;
     }
+
+    // إنشاء رقم الفاتورة إذا لم يكن موجوداً
+    let invoiceNumber = formData.invoiceNumber;
+    if (!invoiceNumber) {
+      invoiceNumber = `PUR-${Date.now()}`;
+    }
+
+    // حساب إجمالي كل منتج
+    const items = formData.items.map(item => ({
+      ...item,
+      quantity: parseFloat(item.quantity),
+      unitPrice: parseFloat(item.unitPrice),
+      total: parseFloat(item.quantity) * parseFloat(item.unitPrice)
+    }));
+
+    // حساب الإجماليات
+    const { subtotal, total } = calculateTotals(items, parseFloat(formData.tax || 0));
 
     const url = editingPurchase ? `/api/purchases/${editingPurchase._id}` : '/api/purchases';
     const method = editingPurchase ? 'PUT' : 'POST';
@@ -57,7 +90,14 @@ export default function PurchasesPage() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          invoiceNumber,
+          items,
+          subtotal,
+          total,
+          tax: parseFloat(formData.tax || 0)
+        })
       });
       
       const data = await res.json();
@@ -79,10 +119,14 @@ export default function PurchasesPage() {
   const handleEdit = (purchase) => {
     setEditingPurchase(purchase);
     setFormData({
+      invoiceNumber: purchase.invoiceNumber || '',
       supplier: purchase.supplier?._id || '',
       purchaseDate: new Date(purchase.purchaseDate).toISOString().split('T')[0],
       paymentStatus: purchase.paymentStatus,
       items: purchase.items || [],
+      tax: purchase.tax || 0,
+      subtotal: purchase.subtotal || 0,
+      total: purchase.total || 0,
       notes: purchase.notes || ''
     });
     setShowModal(true);
@@ -106,10 +150,14 @@ export default function PurchasesPage() {
 
   const resetForm = () => {
     setFormData({
+      invoiceNumber: '',
       supplier: '',
       purchaseDate: new Date().toISOString().split('T')[0],
       paymentStatus: 'unpaid',
-      items: [{ product: '', quantity: '' }],
+      items: [{ product: '', quantity: '', unitPrice: '', total: '' }],
+      tax: 0,
+      subtotal: 0,
+      total: 0,
       notes: ''
     });
     setEditingPurchase(null);
@@ -206,39 +254,49 @@ export default function PurchasesPage() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredPurchases.map((purchase) => (
-                  <tr key={purchase._id} className="hover:bg-gray-50">
+                  <tr key={purchase._id} className="hover:bg-gray-50 cursor-pointer">
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <Truck className="w-5 h-5 text-indigo-600" />
-                        <span className="font-semibold">{purchase.supplier?.name || 'غير معروف'}</span>
-                      </div>
+                      <Link href={`/dashboard/purchases/${purchase._id}`} className="contents">
+                        <div className="flex items-center gap-3">
+                          <Truck className="w-5 h-5 text-indigo-600" />
+                          <span className="font-semibold">{purchase.supplier?.name || 'غير معروف'}</span>
+                        </div>
+                      </Link>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-gray-500" />
-                        {new Date(purchase.purchaseDate).toLocaleDateString('ar-EG')}
-                      </div>
+                      <Link href={`/dashboard/purchases/${purchase._id}`} className="contents">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-gray-500" />
+                          {new Date(purchase.purchaseDate).toLocaleDateString('ar-EG')}
+                        </div>
+                      </Link>
                     </td>
                     <td className="px-6 py-4">
-                      {purchase.items?.reduce((sum, item) => sum + parseFloat(item.quantity || 0), 0) || 0}
+                      <Link href={`/dashboard/purchases/${purchase._id}`} className="contents">
+                        <div>{purchase.items?.reduce((sum, item) => sum + parseFloat(item.quantity || 0), 0) || 0}</div>
+                      </Link>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 font-semibold text-green-600">
-                        <DollarSign className="w-4 h-4" />
-                        {purchase.totalAmount?.toLocaleString() || 0}
-                      </div>
+                      <Link href={`/dashboard/purchases/${purchase._id}`} className="contents">
+                        <div className="flex items-center gap-2 font-semibold text-green-600">
+                          <DollarSign className="w-4 h-4" />
+                          {purchase.totalAmount?.toLocaleString() || 0}
+                        </div>
+                      </Link>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        purchase.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' :
-                        purchase.paymentStatus === 'partial' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-red-100 text-red-700'
-                      }`}>
-                        {purchase.paymentStatus === 'paid' ? 'مدفوعة' : purchase.paymentStatus === 'partial' ? 'جزئية' : 'لم تدفع'}
-                      </span>
+                      <Link href={`/dashboard/purchases/${purchase._id}`} className="contents">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          purchase.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' :
+                          purchase.paymentStatus === 'partial' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {purchase.paymentStatus === 'paid' ? 'مدفوعة' : purchase.paymentStatus === 'partial' ? 'جزئية' : 'لم تدفع'}
+                        </span>
+                      </Link>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex gap-2">
+                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => handleEdit(purchase)}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
@@ -276,7 +334,18 @@ export default function PurchasesPage() {
               </h2>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-2">رقم الفاتورة</label>
+                    <input
+                      type="text"
+                      value={formData.invoiceNumber}
+                      onChange={(e) => setFormData({ ...formData, invoiceNumber: e.target.value })}
+                      placeholder="سيتم توليده تلقائياً"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+
                   <div>
                     <label className="block text-gray-700 font-semibold mb-2">المورد *</label>
                     <select
@@ -324,9 +393,9 @@ export default function PurchasesPage() {
                   <h3 className="text-lg font-bold text-gray-800">المنتجات</h3>
 
                   {formData.items.map((item, index) => (
-                    <div key={index} className="grid grid-cols-2 gap-2 p-4 bg-gray-50 rounded-lg">
+                    <div key={index} className="grid grid-cols-4 gap-2 p-4 bg-gray-50 rounded-lg">
                       <div>
-                        <label className="text-xs text-gray-600">المنتج</label>
+                        <label className="text-xs text-gray-600">المنتج *</label>
                         <select
                           required
                           value={item.product}
@@ -344,7 +413,7 @@ export default function PurchasesPage() {
                         </select>
                       </div>
                       <div>
-                        <label className="text-xs text-gray-600">الكمية</label>
+                        <label className="text-xs text-gray-600">الكمية *</label>
                         <input
                           type="number"
                           step="0.01"
@@ -359,8 +428,107 @@ export default function PurchasesPage() {
                           placeholder="0"
                         />
                       </div>
+                      <div>
+                        <label className="text-xs text-gray-600">السعر *</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          required
+                          value={item.unitPrice}
+                          onChange={(e) => {
+                            const newItems = [...formData.items];
+                            newItems[index].unitPrice = e.target.value;
+                            setFormData({ ...formData, items: newItems });
+                          }}
+                          className="w-full px-2 py-2 border border-gray-300 rounded text-sm"
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-600">الإجمالي</label>
+                        <div className="w-full px-2 py-2 border border-gray-300 rounded text-sm bg-gray-100 flex items-center">
+                          {(parseFloat(item.quantity || 0) * parseFloat(item.unitPrice || 0)).toFixed(2)}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-600">تاريخ الانتهاء</label>
+                        <input
+                          type="date"
+                          value={item.expiryDate ? new Date(item.expiryDate).toISOString().split('T')[0] : ''}
+                          onChange={(e) => {
+                            const newItems = [...formData.items];
+                            newItems[index].expiryDate = e.target.value;
+                            setFormData({ ...formData, items: newItems });
+                          }}
+                          className="w-full px-2 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-600">رقم الدفعة</label>
+                        <input
+                          type="text"
+                          value={item.batchNumber || ''}
+                          onChange={(e) => {
+                            const newItems = [...formData.items];
+                            newItems[index].batchNumber = e.target.value;
+                            setFormData({ ...formData, items: newItems });
+                          }}
+                          className="w-full px-2 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
                     </div>
                   ))}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData({
+                        ...formData,
+                        items: [...formData.items, { product: '', quantity: '', unitPrice: '', total: '' }]
+                      });
+                    }}
+                    className="w-full py-2 border border-dashed border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition"
+                  >
+                    + إضافة منتج
+                  </button>
+                </div>
+
+                {/* Totals */}
+                <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg mt-6">
+                  <div>
+                    <label className="text-sm text-gray-600">الضريبة</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.tax}
+                      onChange={(e) => setFormData({ ...formData, tax: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 mt-1"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600">المجموع الفرعي</label>
+                    <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white mt-1 font-semibold">
+                      {calculateTotals(formData.items, parseFloat(formData.tax || 0)).subtotal.toFixed(2)}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600">المجموع النهائي</label>
+                    <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white mt-1 font-semibold text-lg text-green-600">
+                      {calculateTotals(formData.items, parseFloat(formData.tax || 0)).total.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">ملاحظات</label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    rows="3"
+                    placeholder="ملاحظات إضافية..."
+                  ></textarea>
                 </div>
 
                 <div className="flex gap-3 mt-6">

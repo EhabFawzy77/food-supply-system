@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '../../../../lib/mongodb';
 import Sale from '../../../../lib/models/Sale';
+import Product from '../../../../lib/models/Product'; // ensure model is registered for populate
 
 export async function GET(request) {
   try {

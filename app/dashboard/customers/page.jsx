@@ -76,25 +76,46 @@ export default function CustomersPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customerId: selectedCustomer._id,
+          type: 'sale',
           amount: parseFloat(paymentAmount),
-          type: 'received'
+          customerId: selectedCustomer._id,
+          paymentMethod: 'cash',
+          receivedFrom: selectedCustomer.name,
+          notes: `دفعة من العميل: ${selectedCustomer.name}`,
+          transactionDate: new Date().toISOString()
         })
       });
 
-      if (res.ok) {
-        // تحديث الديون
+      // Parse response defensively
+      let data = null;
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        try { data = JSON.parse(text); } catch (e) { data = { success: res.ok, message: text }; }
+      }
+
+      if (data && data.success) {
+        // تحديث الديون محلياً
         setCustomers(customers.map(c => 
           c._id === selectedCustomer._id 
-            ? { ...c, currentDebt: c.currentDebt - parseFloat(paymentAmount) }
+            ? { ...c, currentDebt: Math.max(0, (Number(c.currentDebt) || 0) - parseFloat(paymentAmount)) }
             : c
         ));
+        setSelectedCustomer({
+          ...selectedCustomer,
+          currentDebt: Math.max(0, (Number(selectedCustomer.currentDebt) || 0) - parseFloat(paymentAmount))
+        });
         setShowPaymentModal(false);
         setPaymentAmount('');
-        alert('تم تسجيل الدفعة بنجاح');
+        alert('✅ تم تسجيل الدفعة بنجاح');
+      } else {
+        alert(`❌ خطأ: ${data && (data.error || data.message) ? (data.error || data.message) : 'فشل تسجيل الدفعة'}`);
       }
     } catch (error) {
-      alert('حدث خطأ في تسجيل الدفعة');
+      console.error('خطأ في تسجيل الدفعة:', error);
+      alert('❌ حدث خطأ في تسجيل الدفعة');
     }
   };
 

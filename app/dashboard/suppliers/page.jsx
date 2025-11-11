@@ -75,24 +75,37 @@ export default function SuppliersPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          supplierId: selectedSupplier._id,
+          type: 'purchase',
           amount: parseFloat(paymentAmount),
-          type: 'paid'
+          supplierId: selectedSupplier._id,
+          paymentMethod: 'cash',
+          paidTo: selectedSupplier.name,
+          notes: `دفعة للمورد: ${selectedSupplier.name}`,
+          transactionDate: new Date().toISOString()
         })
       });
 
-      if (res.ok) {
+      const data = await res.json();
+
+      if (data.success) {
         setSuppliers(suppliers.map(s => 
           s._id === selectedSupplier._id 
-            ? { ...s, currentDebt: s.currentDebt - parseFloat(paymentAmount) }
+            ? { ...s, currentDebt: Math.max(0, s.currentDebt - parseFloat(paymentAmount)) }
             : s
         ));
+        setSelectedSupplier({
+          ...selectedSupplier,
+          currentDebt: Math.max(0, selectedSupplier.currentDebt - parseFloat(paymentAmount))
+        });
         setShowPaymentModal(false);
         setPaymentAmount('');
-        alert('تم تسجيل الدفعة بنجاح');
+        alert('✅ تم تسجيل الدفعة بنجاح');
+      } else {
+        alert(`❌ خطأ: ${data.error || data.message || 'فشل تسجيل الدفعة'}`);
       }
     } catch (error) {
-      alert('حدث خطأ في تسجيل الدفعة');
+      console.error('خطأ:', error);
+      alert('❌ حدث خطأ في تسجيل الدفعة');
     }
   };
 

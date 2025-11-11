@@ -54,25 +54,30 @@ export async function POST(request) {
     // التحقق من البيانات المطلوبة
     if (!body.type || !body.amount || !body.paymentMethod) {
       return NextResponse.json(
-        { success: false, error: 'البيانات المطلوبة ناقصة' },
+        { success: false, error: 'البيانات المطلوبة ناقصة (type, amount, paymentMethod)' },
         { status: 400 }
       );
     }
 
+    // إنشاء رقم مرجعي إذا لم يكن موجوداً
+    const referenceNumber = body.referenceNumber || `PAY-${Date.now()}`;
+
     // إنشاء سجل الدفعة
     const payment = await Payment.create({
       type: body.type,
-      referenceId: body.referenceId,
-      referenceNumber: body.referenceNumber || `PAY-${Date.now()}`,
+      referenceId: body.referenceId || null, // يمكن أن يكون null للدفعات العامة
+      referenceNumber: referenceNumber,
       amount: body.amount,
       paymentMethod: body.paymentMethod,
-      receivedFrom: body.receivedFrom,
-      paidTo: body.paidTo,
-      notes: body.notes,
-      checkNumber: body.checkNumber,
-      bankName: body.bankName,
+      receivedFrom: body.receivedFrom || null,
+      paidTo: body.paidTo || null,
+      customer: body.customerId || null,
+      supplier: body.supplierId || null,
+      notes: body.notes || null,
+      checkNumber: body.checkNumber || null,
+      bankName: body.bankName || null,
       transactionDate: body.transactionDate || new Date(),
-      createdBy: body.createdBy
+      createdBy: body.createdBy || null
     });
     
     // تحديث الفواتير إذا كان هناك referenceId
@@ -129,6 +134,25 @@ export async function POST(request) {
               $inc: { currentDebt: -body.amount }
             });
           }
+        }
+      }
+    }
+
+    // إذا لم يكن هناك referenceId ولكن تم تمرير customerId/supplierId، فعلى الخادم تحديث ديون الكيان المقابل
+    if (!body.referenceId) {
+      if (body.type === 'sale' && body.customerId) {
+        try {
+          await Customer.findByIdAndUpdate(body.customerId, { $inc: { currentDebt: -body.amount } });
+        } catch (err) {
+          console.warn('Failed to update customer debt after payment:', err.message);
+        }
+      }
+
+      if (body.type === 'purchase' && body.supplierId) {
+        try {
+          await Supplier.findByIdAndUpdate(body.supplierId, { $inc: { currentDebt: -body.amount } });
+        } catch (err) {
+          console.warn('Failed to update supplier debt after payment:', err.message);
         }
       }
     }

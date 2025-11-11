@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { LogoIcon } from '../Logo';
 import { 
   LayoutDashboard, Package, ShoppingCart, Users, TrendingUp,
   Warehouse, UserCircle, Settings, FileText, CreditCard,
@@ -115,9 +116,14 @@ export default function Sidebar({ user, currentPath }) {
         {/* Header */}
         <div className="p-4 flex items-center justify-between border-b border-indigo-700">
           {isOpen && (
-            <div>
-              <h2 className="text-xl font-bold">نظام الإدارة</h2>
-              <p className="text-xs text-indigo-300">{user?.fullName}</p>
+            <div className="flex items-center gap-2 flex-1">
+              <div className="w-8 h-8 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                <LogoIcon />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-lg font-bold">نظام الإدارة</h2>
+                <p className="text-xs text-indigo-300">{user?.fullName}</p>
+              </div>
             </div>
           )}
           <button 

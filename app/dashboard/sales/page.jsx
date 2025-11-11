@@ -112,6 +112,7 @@ export default function DashboardHome() {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
       <div className="max-w-7xl mx-auto">
         {/* Welcome Header */}
@@ -209,20 +210,16 @@ export default function DashboardHome() {
             {recentSales.length > 0 ? (
               <div className="space-y-3">
                 {recentSales.map((sale) => (
-                  <div key={sale._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                  <Link key={sale._id} href={`/dashboard/sales/${sale._id}`} className="w-full text-left flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
                     <div className="flex-1">
                       <div className="font-semibold text-gray-800">{sale.invoiceNumber}</div>
-                      <div className="text-sm text-gray-600">
-                        {sale.customer?.name || 'عميل محذوف'}
-                      </div>
+                      <div className="text-sm text-gray-600">{sale.customer?.name || 'عميل محذوف'}</div>
                     </div>
                     <div className="text-right">
                       <div className="font-bold text-green-600">{(sale.total || 0).toLocaleString()} جنيه</div>
-                      <div className="text-xs text-gray-500">
-                        {new Date(sale.saleDate).toLocaleDateString('ar-EG')}
-                      </div>
+                      <div className="text-xs text-gray-500">{new Date(sale.saleDate).toLocaleDateString('ar-EG')}</div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             ) : (
@@ -337,5 +334,6 @@ export default function DashboardHome() {
         </div>
       </div>
     </div>
+    </>
   );
 }

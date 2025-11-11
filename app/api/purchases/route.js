@@ -55,6 +55,21 @@ export async function POST(request) {
     
     const body = await request.json();
     
+    // التحقق من البيانات المطلوبة
+    if (!body.invoiceNumber) {
+      body.invoiceNumber = `PUR-${Date.now()}`;
+    }
+    
+    // حساب الإجماليات إذا لم تكن موجودة
+    if (!body.subtotal || !body.total) {
+      const subtotal = body.items.reduce((sum, item) => {
+        return sum + (parseFloat(item.quantity) * parseFloat(item.unitPrice));
+      }, 0);
+      
+      body.subtotal = subtotal;
+      body.total = subtotal + (parseFloat(body.tax) || 0);
+    }
+    
     // إنشاء فاتورة المشتريات
     const purchase = await Purchase.create(body);
     

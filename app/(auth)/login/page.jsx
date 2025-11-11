@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Lock, User, LogIn, ShoppingCart } from 'lucide-react';
 import { useApp } from '../../../contexts/AppContext';
+import { LogoWithText } from '../../../components/Logo';
 
 export default function LoginPage() {
   const { login, user, loading } = useApp();
@@ -67,9 +68,10 @@ export default function LoginPage() {
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 animate-fadeIn">
         {/* Logo & Header */}
         <div className="text-center mb-8">
-          <img src="/logo.png" alt="Logo" className="w-20 h-20 mx-auto mb-4 rounded-full shadow-lg object-cover" />
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">نظام إدارة المبيعات</h1>
-          <p className="text-gray-600">شركة التوريدات الغذائية</p>
+          <div className="flex justify-center mb-4">
+            <LogoWithText />
+          </div>
+          <p className="text-gray-600 mt-4">شركة التوريدات الغذائية</p>
         </div>
 
         {/* Error Message */}
