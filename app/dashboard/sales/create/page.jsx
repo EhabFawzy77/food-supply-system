@@ -27,14 +27,12 @@ export default function SalesPage() {
 
   const loadProductsAndCustomers = async () => {
     try {
-      // جلب المنتجات من MongoDB
       const productsRes = await fetch('/api/products');
       const productsData = await productsRes.json();
       if (productsData.success) {
         setProducts(productsData.data || []);
       }
 
-      // جلب العملاء من MongoDB
       const customersRes = await fetch('/api/customers');
       const customersData = await customersRes.json();
       if (customersData.success) {
@@ -86,13 +84,21 @@ export default function SalesPage() {
   };
 
   const calculateChange = () => {
-    const paid = parseFloat(paidAmount || 0);
-    const total = calculateTotal();
+    // فقط للكاش: المدفوع - الإجمالي
     if (paymentMethod === 'cash') {
-      return paid - total; // positive = change to give back
+      const paid = parseFloat(paidAmount || 0);
+      const total = calculateTotal();
+      return paid - total;
     }
+    return 0;
+  };
+
+  const calculateRemainingDebt = () => {
+    // فقط للآجل: الإجمالي - المدفوع
     if (paymentMethod === 'credit') {
-      return total - paid; // remaining due
+      const paid = parseFloat(paidAmount || 0);
+      const total = calculateTotal();
+      return total - paid;
     }
     return 0;
   };
@@ -101,19 +107,46 @@ export default function SalesPage() {
     if (cart.length === 0) return false;
     if (!selectedCustomer) return false;
     
-    if (paymentMethod === 'credit') {
-      const total = calculateTotal();
-      const paid = parseFloat(paidAmount || 0);
-      const remainingDue = total - paid;
-      const availableCredit = (selectedCustomer.creditLimit || 0) - (selectedCustomer.currentDebt || 0);
-      return remainingDue <= availableCredit;
-    }
+    const total = calculateTotal();
+    const paid = parseFloat(paidAmount || 0);
 
     if (paymentMethod === 'cash') {
-      return parseFloat(paidAmount || 0) >= calculateTotal();
+      // للكاش: المدفوع يجب أن يكون >= الإجمالي
+      return paid >= total;
+    }
+
+    if (paymentMethod === 'credit') {
+      // للآجل: المتبقي (الإجمالي - المدفوع) يجب أن يكون <= الائتمان المتاح
+      const remainingDebt = total - paid;
+      const availableCredit = (selectedCustomer.creditLimit || 0) - (selectedCustomer.currentDebt || 0);
+      return remainingDebt <= availableCredit;
     }
     
     return true;
+  };
+
+  const getErrorMessage = () => {
+    if (cart.length === 0) return 'السلة فارغة';
+    if (!selectedCustomer) return 'اختر عميل';
+    
+    const total = calculateTotal();
+    const paid = parseFloat(paidAmount || 0);
+
+    if (paymentMethod === 'cash') {
+      if (paid < total) {
+        return `المدفوع أقل من الإجمالي. ينقص: ${(total - paid).toLocaleString()} جنيه`;
+      }
+    }
+
+    if (paymentMethod === 'credit') {
+      const remainingDebt = total - paid;
+      const availableCredit = (selectedCustomer.creditLimit || 0) - (selectedCustomer.currentDebt || 0);
+      if (remainingDebt > availableCredit) {
+        return `تجاوز حد الائتمان. المتاح: ${availableCredit.toLocaleString()} جنيه`;
+      }
+    }
+
+    return null;
   };
 
   const completeSale = async () => {
@@ -121,6 +154,21 @@ export default function SalesPage() {
 
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
     const paidAmountNum = parseFloat(paidAmount || 0);
+    const total = calculateTotal();
+
+    // تحديد حالة الدفع
+    let paymentStatus;
+    if (paymentMethod === 'cash') {
+      paymentStatus = 'paid'; // الكاش دائماً paid
+    } else if (paymentMethod === 'credit') {
+      if (paidAmountNum >= total) {
+        paymentStatus = 'paid';
+      } else if (paidAmountNum > 0) {
+        paymentStatus = 'partial';
+      } else {
+        paymentStatus = 'unpaid';
+      }
+    }
 
     const saleData = {
       customer: selectedCustomer._id,
@@ -131,9 +179,9 @@ export default function SalesPage() {
       })),
       subtotal: calculateSubtotal(),
       discount: discount,
-      total: calculateTotal(),
+      total: total,
       paymentMethod: paymentMethod,
-      paymentStatus: (paidAmountNum >= calculateTotal()) ? 'paid' : (paidAmountNum > 0 ? 'partial' : (paymentMethod === 'cash' ? 'paid' : 'unpaid')),
+      paymentStatus: paymentStatus,
       paidAmount: paidAmountNum,
       notes: notes,
       createdBy: currentUser._id || null
@@ -235,7 +283,7 @@ export default function SalesPage() {
                   className="p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition text-right"
                 >
                   <div className="font-bold text-gray-800 mb-1">{product.name}</div>
-                  <div className="text-sm text-gray-600 mb-2">{product.stock} {product.unit}</div>
+                  <div className="text-sm text-gray-600 mb-2">{product.unit}</div>
                   <div className="text-lg font-bold text-indigo-600">{product.sellingPrice} جنيه</div>
                 </button>
               ))}
@@ -274,11 +322,21 @@ export default function SalesPage() {
                   </div>
                   <div className="flex justify-between mb-1">
                     <span className="text-gray-600">حد الائتمان:</span>
-                    <span className="font-semibold text-green-600">{selectedCustomer.creditLimit.toLocaleString()} جنيه</span>
+                    <span className="font-semibold text-green-600">
+                      {(selectedCustomer.creditLimit || 0).toLocaleString()} جنيه
+                    </span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between mb-1">
                     <span className="text-gray-600">الديون الحالية:</span>
-                    <span className="font-semibold text-red-600">{selectedCustomer.currentDebt.toLocaleString()} جنيه</span>
+                    <span className="font-semibold text-red-600">
+                      {(selectedCustomer.currentDebt || 0).toLocaleString()} جنيه
+                    </span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t">
+                    <span className="text-gray-600">الائتمان المتاح:</span>
+                    <span className="font-semibold text-blue-600">
+                      {((selectedCustomer.creditLimit || 0) - (selectedCustomer.currentDebt || 0)).toLocaleString()} جنيه
+                    </span>
                   </div>
                 </div>
               )}
@@ -363,7 +421,10 @@ export default function SalesPage() {
                   <label className="block font-semibold text-gray-800 mb-2">طريقة الدفع</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
-                      onClick={() => setPaymentMethod('cash')}
+                      onClick={() => {
+                        setPaymentMethod('cash');
+                        setPaidAmount(''); // Reset amount when switching
+                      }}
                       className={`p-3 rounded-lg border-2 transition ${
                         paymentMethod === 'cash'
                           ? 'border-green-500 bg-green-50 text-green-700'
@@ -372,9 +433,13 @@ export default function SalesPage() {
                     >
                       <Banknote className="w-5 h-5 mx-auto mb-1" />
                       <div className="text-sm font-semibold">كاش</div>
+                      <div className="text-xs text-gray-500">دفع كامل</div>
                     </button>
                     <button
-                      onClick={() => setPaymentMethod('credit')}
+                      onClick={() => {
+                        setPaymentMethod('credit');
+                        setPaidAmount(''); // Reset amount when switching
+                      }}
                       className={`p-3 rounded-lg border-2 transition ${
                         paymentMethod === 'credit'
                           ? 'border-orange-500 bg-orange-50 text-orange-700'
@@ -383,33 +448,45 @@ export default function SalesPage() {
                     >
                       <CreditCard className="w-5 h-5 mx-auto mb-1" />
                       <div className="text-sm font-semibold">آجل</div>
+                      <div className="text-xs text-gray-500">دفع جزئي/كامل</div>
                     </button>
                   </div>
                 </div>
 
-                {(paymentMethod === 'cash' || paymentMethod === 'credit') && (
-                  <div>
-                    <label className="block font-semibold text-gray-800 mb-2">المبلغ المدفوع</label>
-                    <input
-                      type="number"
-                      value={paidAmount}
-                      onChange={(e) => setPaidAmount(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                      placeholder="0"
-                    />
-                    {paymentMethod === 'cash' && paidAmount && calculateChange() >= 0 && (
-                      <div className="mt-2 p-2 bg-blue-50 rounded-lg text-center">
-                        <span className="text-sm text-gray-600">الباقي: </span>
-                        <span className="font-bold text-blue-600">{calculateChange().toLocaleString()} جنيه</span>
-                      </div>
-                    )}
+                <div>
+                  <label className="block font-semibold text-gray-800 mb-2">
+                    {paymentMethod === 'cash' ? 'المبلغ المدفوع' : 'المبلغ المدفوع (اختياري)'}
+                  </label>
+                  <input
+                    type="number"
+                    value={paidAmount}
+                    onChange={(e) => setPaidAmount(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    placeholder={paymentMethod === 'cash' ? 'أدخل المبلغ المدفوع' : '0 (اترك فارغاً للدفع الآجل الكامل)'}
+                  />
+                  
+                  {paymentMethod === 'cash' && paidAmount && calculateChange() >= 0 && (
+                    <div className="mt-2 p-2 bg-blue-50 rounded-lg text-center">
+                      <span className="text-sm text-gray-600">الباقي: </span>
+                      <span className="font-bold text-blue-600">{calculateChange().toLocaleString()} جنيه</span>
+                    </div>
+                  )}
 
-                    {paymentMethod === 'credit' && (parseFloat(paidAmount || 0) > 0) && (
-                      <div className="mt-2 p-2 bg-yellow-50 rounded-lg text-center">
-                        <span className="text-sm text-gray-600">المتبقي: </span>
-                        <span className="font-bold text-yellow-700">{calculateChange().toLocaleString()} جنيه</span>
-                      </div>
-                    )}
+                  {paymentMethod === 'credit' && (
+                    <div className="mt-2 p-2 bg-yellow-50 rounded-lg text-center">
+                      <span className="text-sm text-gray-600">سيتم تسجيل كدين: </span>
+                      <span className="font-bold text-yellow-700">
+                        {calculateRemainingDebt().toLocaleString()} جنيه
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Error Message */}
+                {!canCompleteSale() && getErrorMessage() && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                    <span className="text-sm text-red-700">{getErrorMessage()}</span>
                   </div>
                 )}
 
