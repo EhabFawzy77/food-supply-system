@@ -6,6 +6,7 @@ import { useApp } from '../../contexts/AppContext';
 import Sidebar from '../../components/Dashboard/Sidebar';
 import Header from '../../components/Dashboard/Header';
 
+
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
   const { user, loading } = useApp();

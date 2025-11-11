@@ -17,7 +17,7 @@
 
 ### Core Data Model
 All data is stored exclusively in **MongoDB** (no hardcoded data in code):
-- **Users**: Manage system access with roles (admin, manager, user, guest)
+- **Users**: Manage system access with roles (admin, user)
 - **Products**: Food items with pricing and suppliers
 - **Suppliers**: Food suppliers with contact info
 - **Customers**: Retail/wholesale buyers with credit limits

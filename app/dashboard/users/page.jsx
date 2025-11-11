@@ -24,9 +24,7 @@ export default function UsersManagementPage() {
 
   const roles = [
     { value: 'admin', label: 'مدير عام', color: 'red', permissions: 'كل الصلاحيات' },
-    { value: 'manager', label: 'مدير', color: 'blue', permissions: 'كل شيء عدا المستخدمين' },
-    { value: 'user', label: 'مستخدم', color: 'green', permissions: 'المبيعات والعملاء' },
-    { value: 'guest', label: 'ضيف', color: 'gray', permissions: 'المخزون فقط' }
+    { value: 'user', label: 'مستخدم', color: 'green', permissions: 'المبيعات والعملاء والمخزون' }
   ];
 
   useEffect(() => {

@@ -174,7 +174,7 @@ export default function DashboardHome() {
             <QuickAction
               icon={ShoppingCart}
               label="إضافة فاتورة بيع"
-              link="/dashboard/sales/create"
+              link="/dashboard/sales"
               color="bg-gradient-to-r from-green-500 to-green-600"
             />
             <QuickAction

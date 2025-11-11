@@ -242,7 +242,7 @@ export default function SuppliersPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">إجمالي المشتريات:</span>
                   <span className="font-semibold text-green-600">
-                    {supplier.totalPurchases.toLocaleString()} جنيه
+                    {supplier.totalPurchases ? supplier.totalPurchases.toLocaleString() : '0'} جنيه
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">

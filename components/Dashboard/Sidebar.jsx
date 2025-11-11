@@ -174,8 +174,7 @@ export default function Sidebar({ user, currentPath }) {
               <div className="text-xs text-indigo-200">
                 الدور: <span className="font-semibold">{
                   user?.role === 'admin' ? 'مدير عام' :
-                  user?.role === 'manager' ? 'مدير' :
-                  user?.role === 'user' ? 'مستخدم' : 'ضيف'
+                  user?.role === 'user' ? 'مستخدم' : 'مستخدم'
                 }</span>
               </div>
             </div>

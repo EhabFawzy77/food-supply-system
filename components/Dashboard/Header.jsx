@@ -83,8 +83,7 @@ export default function Header({ user }) {
               <div className="font-semibold text-gray-800">{user?.fullName}</div>
               <div className="text-xs text-gray-500">
                 {user?.role === 'admin' ? 'مدير عام' :
-                 user?.role === 'manager' ? 'مدير' :
-                 user?.role === 'user' ? 'مستخدم' : 'ضيف'}
+                 user?.role === 'user' ? 'مستخدم' : 'مستخدم'}
               </div>
             </div>
             <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
