@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '../../../lib/mongodb';
 import  Stock  from '../../../lib/models/Stock';
 import Product from '../../../lib/models/Product';
+import Supplier from '../../../lib/models/Supplier';
 
 export async function GET(request) {
   try {
@@ -12,7 +13,7 @@ export async function GET(request) {
     const expiringSoon = searchParams.get('expiringSoon');
     
     // جلب كل المنتجات مع المخزون
-    const products = await Product.find().populate('supplier');
+    const products = await Product.find();
     
     const inventory = [];
     
@@ -75,6 +76,7 @@ export async function GET(request) {
       data: inventory 
     });
   } catch (error) {
+    console.error('Error in GET /api/inventory:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

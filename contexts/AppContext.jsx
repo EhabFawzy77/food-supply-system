@@ -73,11 +73,14 @@ export function AppProvider({ children }) {
   };
 
   const updateUserPermissions = (permissions) => {
-    if (user) {
-      const updatedUser = { ...user, permissions };
-      setUser(updatedUser);
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-    }
+    setUser(prevUser => {
+      if (prevUser) {
+        const updatedUser = { ...prevUser, permissions };
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        return updatedUser;
+      }
+      return prevUser;
+    });
   };
 
   const addNotification = (notification) => {
