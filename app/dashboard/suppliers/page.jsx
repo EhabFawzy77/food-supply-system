@@ -23,43 +23,21 @@ export default function SuppliersPage() {
     notes: ''
   });
 
-  useEffect(() => {
-    // محاكاة جلب الموردين
-    setSuppliers([
-      {
-        _id: '1',
-        name: 'شركة النيل للتوريدات',
-        phone: '01012345678',
-        email: 'info@nile-supply.com',
-        address: 'القاهرة، مصر الجديدة',
-        taxNumber: '123-456-789',
-        currentDebt: 25000,
-        totalPurchases: 500000,
-        lastPurchase: '2024-11-05'
-      },
-      {
-        _id: '2',
-        name: 'مؤسسة الأهرام التجارية',
-        phone: '01123456789',
-        email: 'contact@ahram-trade.com',
-        address: 'الجيزة، الهرم',
-        taxNumber: '987-654-321',
-        currentDebt: 15000,
-        totalPurchases: 320000,
-        lastPurchase: '2024-11-06'
-      },
-      {
-        _id: '3',
-        name: 'شركة الدلتا للمواد الغذائية',
-        phone: '01234567890',
-        email: 'sales@delta-foods.com',
-        address: 'المنصورة، الدقهلية',
-        taxNumber: '456-789-123',
-        currentDebt: 0,
-        totalPurchases: 180000,
-        lastPurchase: '2024-11-07'
+  const loadSuppliers = async () => {
+    try {
+      const res = await fetch('/api/suppliers');
+      const data = await res.json();
+      if (data.success) {
+        setSuppliers(data.data || []);
       }
-    ]);
+    } catch (error) {
+      console.error('خطأ في جلب الموردين:', error);
+      setSuppliers([]);
+    }
+  };
+
+  useEffect(() => {
+    loadSuppliers();
   }, []);
 
   const handleSubmit = async () => {
@@ -81,7 +59,8 @@ export default function SuppliersPage() {
       if (data.success) {
         setShowModal(false);
         resetForm();
-        // Reload suppliers
+        // Reload suppliers من API
+        await loadSuppliers();
       }
     } catch (error) {
       console.error('خطأ في حفظ المورد:', error);
@@ -136,7 +115,8 @@ export default function SuppliersPage() {
     try {
       const res = await fetch(`/api/suppliers/${id}`, { method: 'DELETE' });
       if (res.ok) {
-        setSuppliers(suppliers.filter(s => s._id !== id));
+        // Reload من API بدلاً من التحديث اليدوي
+        await loadSuppliers();
       }
     } catch (error) {
       console.error('خطأ في حذف المورد:', error);

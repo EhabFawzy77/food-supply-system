@@ -6,7 +6,8 @@ export async function GET(request, { params }) {
   try {
     await connectDB();
     
-    const supplier = await Supplier.findById(params.id);
+    const { id } = await params;
+    const supplier = await Supplier.findById(id);
     
     if (!supplier) {
       return NextResponse.json(
@@ -27,10 +28,11 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   try {
     await connectDB();
+    const { id } = await params;
     const body = await request.json();
     
     const supplier = await Supplier.findByIdAndUpdate(
-      params.id,
+      id,
       body,
       { new: true, runValidators: true }
     );
@@ -55,7 +57,8 @@ export async function DELETE(request, { params }) {
   try {
     await connectDB();
     
-    const supplier = await Supplier.findByIdAndDelete(params.id);
+    const { id } = await params;
+    const supplier = await Supplier.findByIdAndDelete(id);
     
     if (!supplier) {
       return NextResponse.json(

@@ -5,72 +5,17 @@ const fetch = require('node-fetch');
 
 const BASE_URL = 'http://localhost:3000'; // افتراضياً Next.js يعمل على 3000
 
-// بيانات اختبار للمبيعات
+// بيانات اختبار للمبيعات - يجب تحديثها بقيم ObjectId فعلية من قاعدة البيانات
 const testSalesData = {
   cash: {
-    invoiceNumber: `TEST-CASH-${Date.now()}`,
-    date: new Date().toLocaleDateString('ar-EG'),
-    customer: 'محل الأمل', // يجب أن يكون ObjectId في الواقع
-    items: [
-      {
-        product: 'أرز أبيض', // يجب أن يكون ObjectId في الواقع
-        name: 'أرز أبيض',
-        quantity: 2,
-        unitPrice: 25,
-        total: 50
-      }
-    ],
-    subtotal: 50,
-    discount: 0,
-    total: 50,
-    paymentMethod: 'cash',
-    paidAmount: 60, // أكثر من الإجمالي
-    change: 10,
-    notes: 'اختبار دفع كاش'
+    // invoiceNumber, date, customer, items, subtotal, discount, total, paymentMethod, paidAmount, change, notes
+    // يجب استخدام ObjectId فعلية للعميل والمنتجات من قاعدة البيانات
   },
-
   credit: {
-    invoiceNumber: `TEST-CREDIT-${Date.now()}`,
-    date: new Date().toLocaleDateString('ar-EG'),
-    customer: 'محل الأمل', // يجب أن يكون ObjectId في الواقع
-    items: [
-      {
-        product: 'زيت عباد الشمس', // يجب أن يكون ObjectId في الواقع
-        name: 'زيت عباد الشمس',
-        quantity: 1,
-        unitPrice: 45,
-        total: 45
-      }
-    ],
-    subtotal: 45,
-    discount: 0,
-    total: 45,
-    paymentMethod: 'credit',
-    paidAmount: 0,
-    change: 0,
-    notes: 'اختبار دفع آجل'
+    // بيانات اختبار دفع آجل - استخدم ObjectId فعلية
   },
-
   invalidCredit: {
-    invoiceNumber: `TEST-INVALID-${Date.now()}`,
-    date: new Date().toLocaleDateString('ar-EG'),
-    customer: 'محل الأمل',
-    items: [
-      {
-        product: 'عسل نحل',
-        name: 'عسل نحل',
-        quantity: 10,
-        unitPrice: 150,
-        total: 1500
-      }
-    ],
-    subtotal: 1500,
-    discount: 0,
-    total: 1500, // أكبر من حد الائتمان المتاح
-    paymentMethod: 'credit',
-    paidAmount: 0,
-    change: 0,
-    notes: 'اختبار دفع آجل غير صالح'
+    // بيانات اختبار غير صالحة - استخدم ObjectId فعلية
   }
 };
 

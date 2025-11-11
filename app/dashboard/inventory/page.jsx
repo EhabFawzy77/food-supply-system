@@ -15,76 +15,75 @@ export default function InventoryPage() {
     expiringSoon: 0,
     totalValue: 0
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // محاكاة بيانات المخزون
-    const mockInventory = [
-      {
-        _id: '1',
-        product: { name: 'أرز أبيض', category: 'حبوب', unit: 'كجم', purchasePrice: 20, sellingPrice: 25 },
-        quantity: 150,
-        minStockLevel: 200,
-        batchNumber: 'B2024-001',
-        expiryDate: '2024-12-31',
-        location: 'رف A-1',
-        status: 'low'
-      },
-      {
-        _id: '2',
-        product: { name: 'زيت عباد الشمس', category: 'زيوت', unit: 'لتر', purchasePrice: 38, sellingPrice: 45 },
-        quantity: 320,
-        minStockLevel: 150,
-        batchNumber: 'B2024-002',
-        expiryDate: '2025-06-30',
-        location: 'رف B-2',
-        status: 'normal'
-      },
-      {
-        _id: '3',
-        product: { name: 'سكر أبيض', category: 'سكريات', unit: 'كجم', purchasePrice: 25, sellingPrice: 30 },
-        quantity: 80,
-        minStockLevel: 200,
-        batchNumber: 'B2024-003',
-        expiryDate: '2025-12-31',
-        location: 'رف A-3',
-        status: 'low'
-      },
-      {
-        _id: '4',
-        product: { name: 'عصير برتقال', category: 'مشروبات', unit: 'لتر', purchasePrice: 15, sellingPrice: 20 },
-        quantity: 45,
-        minStockLevel: 100,
-        batchNumber: 'B2024-004',
-        expiryDate: '2024-11-20',
-        location: 'رف C-1',
-        status: 'expiring'
-      },
-      {
-        _id: '5',
-        product: { name: 'مكرونة', category: 'معكرونة', unit: 'كجم', purchasePrice: 15, sellingPrice: 18 },
-        quantity: 500,
-        minStockLevel: 150,
-        batchNumber: 'B2024-005',
-        expiryDate: '2025-08-15',
-        location: 'رف A-2',
-        status: 'normal'
+    const loadInventory = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch('/api/inventory');
+        const data = await res.json();
+        if (data.success) {
+          const normalized = (data.data || []).map((item) => {
+            const stockItems = item.stockItems || [];
+            const expiryDates = stockItems
+              .map((stock) => (stock.expiryDate ? new Date(stock.expiryDate) : null))
+              .filter(Boolean);
+            const earliestExpiry = expiryDates.length
+              ? new Date(Math.min(...expiryDates.map((date) => date.getTime())))
+              : null;
+            const locations = Array.from(new Set(stockItems.map((stock) => stock.location).filter(Boolean)));
+            const batchNumbers = stockItems.map((stock) => stock.batchNumber).filter(Boolean);
+            return {
+              ...item,
+              expiryDate: earliestExpiry ? earliestExpiry.toISOString() : null,
+              locations,
+              batchNumbers
+            };
+          });
+          setInventory(normalized);
+        } else {
+          setInventory([]);
+        }
+      } catch (error) {
+        console.error('خطأ في جلب المخزون:', error);
+        setInventory([]);
+      } finally {
+        setLoading(false);
       }
-    ];
+    };
 
-    setInventory(mockInventory);
-
-    // حساب الإحصائيات
-    const totalItems = mockInventory.reduce((sum, item) => sum + item.quantity, 0);
-    const lowStock = mockInventory.filter(item => item.status === 'low').length;
-    const expiringSoon = mockInventory.filter(item => item.status === 'expiring').length;
-    const totalValue = mockInventory.reduce((sum, item) => 
-      sum + (item.quantity * item.product.purchasePrice), 0
-    );
-
-    setStats({ totalItems, lowStock, expiringSoon, totalValue });
+    loadInventory();
   }, []);
 
+  useEffect(() => {
+    const totalItems = inventory.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    const lowStock = inventory.filter((item) => {
+      if (item.status === 'low') {
+        return true;
+      }
+      const quantity = item.quantity || 0;
+      const minStock = item.minStockLevel || 0;
+      return quantity <= minStock;
+    }).length;
+    const expiringSoon = inventory.filter((item) => {
+      if (item.status === 'expiring') {
+        return true;
+      }
+      const days = getDaysUntilExpiry(item.expiryDate);
+      return Number.isFinite(days) && days <= 30;
+    }).length;
+    const totalValue = inventory.reduce(
+      (sum, item) => sum + (item.quantity || 0) * (item.product?.purchasePrice || 0),
+      0
+    );
+    setStats({ totalItems, lowStock, expiringSoon, totalValue });
+  }, [inventory]);
+
   const getDaysUntilExpiry = (expiryDate) => {
+    if (!expiryDate) {
+      return Number.POSITIVE_INFINITY;
+    }
     const today = new Date();
     const expiry = new Date(expiryDate);
     const diffTime = expiry - today;
@@ -94,27 +93,50 @@ export default function InventoryPage() {
 
   const getStatusBadge = (item) => {
     const daysUntilExpiry = getDaysUntilExpiry(item.expiryDate);
-    
-    if (item.quantity <= item.minStockLevel) {
+    const quantity = item.quantity || 0;
+    const minStockLevel = item.minStockLevel || 0;
+
+    if (item.status === 'low' || quantity <= minStockLevel) {
       return <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">مخزون منخفض</span>;
     }
-    
-    if (daysUntilExpiry <= 30) {
+
+    if (item.status === 'expiring' || (Number.isFinite(daysUntilExpiry) && daysUntilExpiry <= 30)) {
       return <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-semibold">قريب الانتهاء</span>;
     }
-    
+
     return <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">جيد</span>;
   };
 
-  const filteredInventory = inventory.filter(item => {
-    const matchesSearch = item.product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.product.category.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    if (filterType === 'all') return matchesSearch;
-    if (filterType === 'low') return matchesSearch && item.status === 'low';
-    if (filterType === 'expiring') return matchesSearch && item.status === 'expiring';
-    if (filterType === 'normal') return matchesSearch && item.status === 'normal';
-    
+  const filteredInventory = inventory.filter((item) => {
+    const name = item.product?.name?.toLowerCase?.() || '';
+    const category = item.product?.category?.toLowerCase?.() || '';
+    const searchValue = searchTerm.toLowerCase();
+    const matchesSearch = name.includes(searchValue) || category.includes(searchValue);
+
+    if (filterType === 'all') {
+      return matchesSearch;
+    }
+
+    if (filterType === 'low') {
+      const quantity = item.quantity || 0;
+      const minStockLevel = item.minStockLevel || 0;
+      return matchesSearch && (item.status === 'low' || quantity <= minStockLevel);
+    }
+
+    if (filterType === 'expiring') {
+      const days = getDaysUntilExpiry(item.expiryDate);
+      return matchesSearch && (item.status === 'expiring' || (Number.isFinite(days) && days <= 30));
+    }
+
+    if (filterType === 'normal') {
+      const quantity = item.quantity || 0;
+      const minStockLevel = item.minStockLevel || 0;
+      const days = getDaysUntilExpiry(item.expiryDate);
+      const isLow = item.status === 'low' || quantity <= minStockLevel;
+      const isExpiring = item.status === 'expiring' || (Number.isFinite(days) && days <= 30);
+      return matchesSearch && !isLow && !isExpiring;
+    }
+
     return matchesSearch;
   });
 
@@ -132,6 +154,17 @@ export default function InventoryPage() {
       <div className="text-gray-600 font-semibold">{label}</div>
     </div>
   );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600">جاري التحميل...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
@@ -251,35 +284,60 @@ export default function InventoryPage() {
               <tbody className="divide-y divide-gray-200">
                 {filteredInventory.map((item) => {
                   const daysUntilExpiry = getDaysUntilExpiry(item.expiryDate);
-                  const itemValue = item.quantity * item.product.purchasePrice;
-                  
+                  const itemValue = (item.quantity || 0) * (item.product?.purchasePrice || 0);
+                  const quantity = item.quantity || 0;
+                  const minStockLevel = item.minStockLevel || 0;
+                  const batchNumbers = item.batchNumbers?.length ? item.batchNumbers.join(', ') : '-';
+                  const locations = item.locations?.length ? item.locations.join(', ') : '-';
+                  const productName = item.product?.name || '-';
+                  const productCategory = item.product?.category || '-';
+                  const productUnit = item.product?.unit || '';
+                  const formattedQuantity = Number(quantity).toLocaleString();
+                  const expiryDateLabel = item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('ar-EG') : null;
+
                   return (
                     <tr key={item._id} className="hover:bg-gray-50 transition">
                       <td className="px-6 py-4">
-                        <div className="font-semibold text-gray-800">{item.product.name}</div>
-                        <div className="text-sm text-gray-500">{item.product.unit}</div>
+                        <div className="font-semibold text-gray-800">{productName}</div>
+                        <div className="text-sm text-gray-500">{productUnit}</div>
                       </td>
-                      <td className="px-6 py-4 text-gray-600">{item.product.category}</td>
+                      <td className="px-6 py-4 text-gray-600">{productCategory}</td>
                       <td className="px-6 py-4">
-                        <span className={`font-bold ${
-                          item.quantity <= item.minStockLevel ? 'text-red-600' : 'text-gray-800'
-                        }`}>
-                          {item.quantity.toLocaleString()}
+                        <span
+                          className={`font-bold ${
+                            quantity <= minStockLevel ? 'text-red-600' : 'text-gray-800'
+                          }`}
+                        >
+                          {formattedQuantity}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-gray-600">{item.minStockLevel}</td>
-                      <td className="px-6 py-4 text-gray-600 font-mono text-sm">{item.batchNumber}</td>
+                      <td className="px-6 py-4 text-gray-600">{minStockLevel}</td>
+                      <td className="px-6 py-4 text-gray-600 font-mono text-sm">{batchNumbers}</td>
                       <td className="px-6 py-4">
-                        <div className={`font-semibold ${
-                          daysUntilExpiry <= 30 ? 'text-orange-600' : 'text-gray-800'
-                        }`}>
-                          {new Date(item.expiryDate).toLocaleDateString('ar-EG')}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {daysUntilExpiry > 0 ? `${daysUntilExpiry} يوم متبقي` : 'منتهي'}
-                        </div>
+                        {expiryDateLabel ? (
+                          <>
+                            <div
+                              className={`font-semibold ${
+                                Number.isFinite(daysUntilExpiry) && daysUntilExpiry <= 30
+                                  ? 'text-orange-600'
+                                  : 'text-gray-800'
+                              }`}
+                            >
+                              {expiryDateLabel}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {Number.isFinite(daysUntilExpiry)
+                                ? daysUntilExpiry > 0
+                                  ? `${daysUntilExpiry} يوم متبقي`
+                                  : 'منتهي'
+                                : 'غير محدد'}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-sm text-gray-500">غير متوفر</div>
+                        )}
                       </td>
-                      <td className="px-6 py-4 text-gray-600">{item.location}</td>
+                      <td className="px-6 py-4 text-gray-600">{locations}</td>
                       <td className="px-6 py-4 font-semibold text-green-600">
                         {itemValue.toLocaleString()} جنيه
                       </td>

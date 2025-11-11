@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useApp } from '../../contexts/AppContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
@@ -83,11 +84,12 @@ export default function Sidebar({ user, currentPath }) {
     }
   ];
 
+  const { logout } = useApp();
+
   const handleLogout = () => {
     if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      router.push('/login');
+      // Use centralized logout to keep AppContext state in sync
+      logout();
     }
   };
 

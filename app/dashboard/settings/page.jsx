@@ -5,30 +5,57 @@ import {
   DollarSign, FileText, Shield, Download, Upload, RefreshCw
 } from 'lucide-react';
 
+const SETTINGS_KEY_MAP = {
+  companyName: 'company_name',
+  companyAddress: 'company_address',
+  companyPhone: 'company_phone',
+  companyEmail: 'company_email',
+  taxNumber: 'tax_number',
+  taxRate: 'tax_rate',
+  currency: 'currency',
+  currencySymbol: 'currency_symbol',
+  invoicePrefix: 'invoice_prefix',
+  lowStockThreshold: 'low_stock_threshold',
+  expiryWarningDays: 'expiry_warning_days',
+  enableNotifications: 'enable_notifications',
+  enableEmail: 'enable_email',
+  emailHost: 'email_host',
+  emailPort: 'email_port',
+  emailUser: 'email_user',
+  backupEnabled: 'backup_enabled',
+  backupFrequency: 'backup_frequency'
+};
+
+const INITIAL_SETTINGS_STATE = {
+  companyName: '',
+  companyAddress: '',
+  companyPhone: '',
+  companyEmail: '',
+  taxNumber: '',
+  taxRate: 0,
+  currency: '',
+  currencySymbol: '',
+  invoicePrefix: '',
+  lowStockThreshold: 0,
+  expiryWarningDays: 0,
+  enableNotifications: false,
+  enableEmail: false,
+  emailHost: '',
+  emailPort: '',
+  emailUser: '',
+  backupEnabled: false,
+  backupFrequency: ''
+};
+
+const BOOLEAN_SETTINGS_KEYS = new Set(['enableNotifications', 'enableEmail', 'backupEnabled']);
+const NUMERIC_SETTINGS_KEYS = new Set(['taxRate', 'lowStockThreshold', 'expiryWarningDays']);
+
 export default function SettingsPage() {
-  const [settings, setSettings] = useState({
-    companyName: 'شركة التوريدات الغذائية',
-    companyAddress: 'القاهرة، مصر',
-    companyPhone: '01012345678',
-    companyEmail: 'info@company.com',
-    taxNumber: '123-456-789',
-    taxRate: 14,
-    currency: 'EGP',
-    currencySymbol: 'جنيه',
-    invoicePrefix: 'INV',
-    lowStockThreshold: 50,
-    expiryWarningDays: 30,
-    enableNotifications: true,
-    enableEmail: false,
-    emailHost: '',
-    emailPort: '',
-    emailUser: '',
-    backupEnabled: true,
-    backupFrequency: 'daily'
-  });
+  const [settings, setSettings] = useState(INITIAL_SETTINGS_STATE);
 
   const [activeTab, setActiveTab] = useState('company');
   const [isSaving, setIsSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const handleSave = async () => {
     setIsSaving(true);

@@ -3,7 +3,8 @@ export async function GET(request, { params }) {
   try {
     await connectDB();
     
-    const sale = await Sale.findById(params.id)
+    const { id } = await params;
+    const sale = await Sale.findById(id)
       .populate('customer')
       .populate('items.product');
     
@@ -27,9 +28,10 @@ export async function PUT(request, { params }) {
   try {
     await connectDB();
     
+    const { id } = await params;
     const body = await request.json();
     const sale = await Sale.findByIdAndUpdate(
-      params.id,
+      id,
       body,
       { new: true, runValidators: true }
     );
@@ -54,7 +56,8 @@ export async function DELETE(request, { params }) {
   try {
     await connectDB();
     
-    const sale = await Sale.findByIdAndDelete(params.id);
+    const { id } = await params;
+    const sale = await Sale.findByIdAndDelete(id);
     
     if (!sale) {
       return NextResponse.json(

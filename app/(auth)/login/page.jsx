@@ -134,24 +134,7 @@ export default function LoginPage() {
           </button>
         </div>
 
-        {/* Demo Users Info */}
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <p className="text-center text-sm text-gray-600 mb-3 font-semibold">حسابات تجريبية:</p>
-          <div className="space-y-2 text-xs">
-            <div className="flex justify-between p-2 bg-red-50 rounded">
-              <span className="font-semibold text-red-700">مدير: admin</span>
-              <span className="text-red-600">admin123</span>
-            </div>
-            <div className="flex justify-between p-2 bg-blue-50 rounded">
-              <span className="font-semibold text-blue-700">مستخدم: user1</span>
-              <span className="text-blue-600">user123</span>
-            </div>
-            <div className="flex justify-between p-2 bg-gray-50 rounded">
-              <span className="font-semibold text-gray-700">ضيف: guest</span>
-              <span className="text-gray-600">guest123</span>
-            </div>
-          </div>
-        </div>
+
 
         {/* Clear Storage Button */}
         <div className="mt-4 text-center">

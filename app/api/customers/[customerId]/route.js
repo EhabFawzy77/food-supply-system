@@ -5,9 +5,10 @@ import  Customer  from '../../../../lib/models/Customer';
 export async function PUT(request, { params }) {
   try {
     await connectDB();
+    const { customerId } = await params;
     const body = await request.json();
     const customer = await Customer.findByIdAndUpdate(
-      params.id,
+      customerId,
       body,
       { new: true, runValidators: true }
     );
@@ -31,7 +32,8 @@ export async function PUT(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     await connectDB();
-    const customer = await Customer.findByIdAndDelete(params.id);
+    const { customerId } = await params;
+    const customer = await Customer.findByIdAndDelete(customerId);
     
     if (!customer) {
       return NextResponse.json(

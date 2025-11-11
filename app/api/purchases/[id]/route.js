@@ -2,7 +2,8 @@ export async function GET(request, { params }) {
   try {
     await connectDB();
     
-    const purchase = await Purchase.findById(params.id)
+    const { id } = await params;
+    const purchase = await Purchase.findById(id)
       .populate('supplier')
       .populate('items.product');
     
@@ -26,9 +27,10 @@ export async function PUT(request, { params }) {
   try {
     await connectDB();
     
+    const { id } = await params;
     const body = await request.json();
     const purchase = await Purchase.findByIdAndUpdate(
-      params.id,
+      id,
       body,
       { new: true, runValidators: true }
     );

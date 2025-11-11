@@ -24,47 +24,21 @@ export default function CustomersPage() {
     customerType: 'retail'
   });
 
-  useEffect(() => {
-    // محاكاة جلب العملاء
-    setCustomers([
-      {
-        _id: '1',
-        name: 'أحمد محمود',
-        businessName: 'سوبر ماركت النور',
-        phone: '01012345678',
-        address: 'شارع النصر، المنصورة',
-        taxNumber: '123456789',
-        creditLimit: 100000,
-        currentDebt: 15000,
-        customerType: 'wholesale',
-        totalPurchases: 250000,
-        lastPurchase: '2024-11-05'
-      },
-      {
-        _id: '2',
-        name: 'محمد علي',
-        businessName: 'محل الأمل',
-        phone: '01123456789',
-        address: 'شارع الجمهورية، القاهرة',
-        creditLimit: 50000,
-        currentDebt: 5000,
-        customerType: 'retail',
-        totalPurchases: 85000,
-        lastPurchase: '2024-11-06'
-      },
-      {
-        _id: '3',
-        name: 'خالد حسن',
-        businessName: 'مطعم الفردوس',
-        phone: '01234567890',
-        address: 'شارع الثورة، الإسكندرية',
-        creditLimit: 30000,
-        currentDebt: 0,
-        customerType: 'wholesale',
-        totalPurchases: 120000,
-        lastPurchase: '2024-11-07'
+  const loadCustomers = async () => {
+    try {
+      const res = await fetch('/api/customers');
+      const data = await res.json();
+      if (data.success) {
+        setCustomers(data.data || []);
       }
-    ]);
+    } catch (error) {
+      console.error('خطأ في جلب العملاء:', error);
+      setCustomers([]);
+    }
+  };
+
+  useEffect(() => {
+    loadCustomers();
   }, []);
 
   const handleSubmit = async () => {
@@ -84,7 +58,8 @@ export default function CustomersPage() {
       const data = await res.json();
       
       if (data.success) {
-        // تحديث القائمة
+        // تحديث القائمة من API
+        await loadCustomers();
         setShowModal(false);
         resetForm();
       }
@@ -143,7 +118,8 @@ export default function CustomersPage() {
     try {
       const res = await fetch(`/api/customers/${id}`, { method: 'DELETE' });
       if (res.ok) {
-        setCustomers(customers.filter(c => c._id !== id));
+        // Reload من API بدلاً من التحديث اليدوي
+        await loadCustomers();
       }
     } catch (error) {
       console.error('خطأ في حذف العميل:', error);
@@ -164,14 +140,14 @@ export default function CustomersPage() {
   };
 
   const filteredCustomers = customers.filter(c =>
-    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.phone.includes(searchTerm)
+    (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (c.businessName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (c.phone || '').includes(searchTerm)
   );
 
-  const totalDebt = customers.reduce((sum, c) => sum + c.currentDebt, 0);
-  const totalCreditLimit = customers.reduce((sum, c) => sum + c.creditLimit, 0);
-  const customersWithDebt = customers.filter(c => c.currentDebt > 0).length;
+  const totalDebt = customers.reduce((sum, c) => sum + (Number(c.currentDebt) || 0), 0);
+  const totalCreditLimit = customers.reduce((sum, c) => sum + (Number(c.creditLimit) || 0), 0);
+  const customersWithDebt = customers.filter(c => (Number(c.currentDebt) || 0) > 0).length;
 
   return (
     <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
@@ -284,39 +260,43 @@ export default function CustomersPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">إجمالي المشتريات:</span>
                   <span className="font-semibold text-green-600">
-                    {customer.totalPurchases.toLocaleString()} جنيه
+                    {(Number(customer.totalPurchases) || 0).toLocaleString()} جنيه
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">حد الائتمان:</span>
                   <span className="font-semibold text-blue-600">
-                    {customer.creditLimit.toLocaleString()} جنيه
+                    {(Number(customer.creditLimit) || 0).toLocaleString()} جنيه
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">الديون الحالية:</span>
                   <span className={`font-semibold ${
-                    customer.currentDebt > 0 ? 'text-red-600' : 'text-green-600'
+                    (Number(customer.currentDebt) || 0) > 0 ? 'text-red-600' : 'text-green-600'
                   }`}>
-                    {customer.currentDebt.toLocaleString()} جنيه
+                    {(Number(customer.currentDebt) || 0).toLocaleString()} جنيه
                   </span>
                 </div>
               </div>
 
-              {customer.currentDebt > 0 && (
+              {(Number(customer.currentDebt) || 0) > 0 && (
                 <div className="mb-4">
                   <div className="flex justify-between text-xs text-gray-600 mb-1">
                     <span>الائتمان المستخدم</span>
-                    <span>{((customer.currentDebt / customer.creditLimit) * 100).toFixed(0)}%</span>
+                    <span>{
+                      customer.creditLimit && Number(customer.creditLimit) > 0
+                        ? (((Number(customer.currentDebt) || 0) / Number(customer.creditLimit)) * 100).toFixed(0)
+                        : '0'
+                    }%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div 
                       className={`h-2 rounded-full ${
-                        (customer.currentDebt / customer.creditLimit) > 0.8 
+                        ((Number(customer.currentDebt) || 0) / (Number(customer.creditLimit) || 1)) > 0.8 
                           ? 'bg-red-500' 
                           : 'bg-orange-500'
                       }`}
-                      style={{ width: `${(customer.currentDebt / customer.creditLimit) * 100}%` }}
+                      style={{ width: `${((Number(customer.currentDebt) || 0) / (Number(customer.creditLimit) || 1)) * 100}%` }}
                     ></div>
                   </div>
                 </div>

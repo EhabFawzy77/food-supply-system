@@ -8,7 +8,8 @@ export async function GET(request, { params }) {
   try {
     await connectDB();
     
-    const setting = await Settings.findOne({ key: params.key });
+    const { key } = await params;
+    const setting = await Settings.findOne({ key });
     
     if (!setting) {
       return NextResponse.json(
@@ -35,10 +36,11 @@ export async function PUT(request, { params }) {
   try {
     await connectDB();
     
+    const { key } = await params;
     const body = await request.json();
     
     const setting = await Settings.findOneAndUpdate(
-      { key: params.key },
+      { key },
       { 
         value: body.value,
         category: body.category || 'general',
@@ -67,7 +69,8 @@ export async function DELETE(request, { params }) {
   try {
     await connectDB();
     
-    const setting = await Settings.findOneAndDelete({ key: params.key });
+    const { key } = await params;
+    const setting = await Settings.findOneAndDelete({ key });
     
     if (!setting) {
       return NextResponse.json(
