@@ -118,6 +118,28 @@ export async function POST(request) {
         );
       }
     }
+
+    // فحص حد الائتمان للعميل إذا كانت طريقة الدفع آجل
+    try {
+      const invoiceAmount = body.total || 0;
+      const paidAmount = body.paidAmount || 0;
+      const paymentTowardsInvoice = Math.min(paidAmount, invoiceAmount);
+      const addedDebt = body.paymentMethod === 'credit' ? Math.max(0, invoiceAmount - paymentTowardsInvoice) : 0;
+
+      if (body.paymentMethod === 'credit') {
+        const cust = await Customer.findById(body.customer);
+        if (cust) {
+          const projectedDebt = (cust.currentDebt || 0) + addedDebt;
+          const limit = cust.creditLimit || 0;
+          if (projectedDebt > limit) {
+            return NextResponse.json({ success: false, error: `تجاوز حد الائتمان للعميل. الحد: ${limit}، المجموع المتوقع: ${projectedDebt}` }, { status: 400 });
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Credit limit check failed:', e);
+      // لا نرمي الخطأ لأن الفشل هنا لا يعني أن العملية يجب أن تتوقف، نستمر
+    }
     
     // إنشاء فاتورة البيع (Sale)
     let sale;
