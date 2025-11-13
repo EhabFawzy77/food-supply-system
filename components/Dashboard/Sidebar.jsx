@@ -9,7 +9,7 @@ import { LogoIcon } from '../Logo';
 import { 
   LayoutDashboard, Package, ShoppingCart, Users, TrendingUp,
   Warehouse, UserCircle, Settings, FileText, CreditCard,
-  Menu, X, LogOut, Truck, ShoppingBag
+  Menu, X, LogOut, Truck, ShoppingBag, Receipt
 } from 'lucide-react';
 
 export default function Sidebar({ user, currentPath }) {
@@ -26,7 +26,7 @@ export default function Sidebar({ user, currentPath }) {
     { 
       icon: ShoppingCart, 
       label: 'المبيعات', 
-      path: '/dashboard/sales', 
+      path: '/dashboard/sales/create', 
       show: user?.permissions?.sales 
     },
     { 
@@ -63,6 +63,12 @@ export default function Sidebar({ user, currentPath }) {
       icon: CreditCard, 
       label: 'المدفوعات', 
       path: '/dashboard/payments', 
+      show: user?.permissions?.sales 
+    },
+    { 
+      icon: Receipt, 
+      label: 'الفواتير', 
+      path: '/dashboard/invoices', 
       show: user?.permissions?.sales 
     },
     { 

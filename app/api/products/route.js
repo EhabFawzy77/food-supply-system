@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '../../../lib/mongodb.js';
 import Product from '../../../lib/models/Product.js';
+import Supplier from '../../../lib/models/Supplier.js';
 
 // GET - جلب كل المنتجات
 export async function GET(request) {

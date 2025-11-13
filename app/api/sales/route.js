@@ -119,7 +119,7 @@ export async function POST(request) {
       }
     }
     
-    // إنشاء فاتورة البيع
+    // إنشاء فاتورة البيع (Sale)
     let sale;
     try {
       sale = await Sale.create(body);
@@ -175,14 +175,65 @@ export async function POST(request) {
     }
     
     // تحديث ديون العميل في حالة الآجل
-    if (body.paymentMethod === 'credit') {
-      await Customer.findByIdAndUpdate(body.customer, {
-        $inc: { currentDebt: body.total - body.paidAmount }
-      });
+    let createdInvoice = null;
+    try {
+      // Fetch customer to snapshot previous debt
+      const customerRecord = await Customer.findById(body.customer);
+      const prevDebt = customerRecord ? (customerRecord.currentDebt || 0) : 0;
+
+      const invoiceAmount = body.total || 0;
+      const paidAmount = body.paidAmount || 0;
+
+      // amount applied to invoice first, then remainder (if any) reduces previous debt
+      const paymentTowardsInvoice = Math.min(paidAmount, invoiceAmount);
+      const paymentTowardsPrevious = Math.max(0, paidAmount - paymentTowardsInvoice);
+
+      // For credit sales, any unpaid portion of the invoice becomes added debt
+      const addedDebt = body.paymentMethod === 'credit' ? Math.max(0, invoiceAmount - paymentTowardsInvoice) : 0;
+
+      // Net change to customer's currentDebt: increase by addedDebt, decrease by paymentTowardsPrevious
+      const deltaDebt = addedDebt - paymentTowardsPrevious;
+
+      if (deltaDebt !== 0) {
+        await Customer.findByIdAndUpdate(body.customer, {
+          $inc: { currentDebt: deltaDebt }
+        });
+      }
+
+      const newCustomerDebt = Math.max(0, prevDebt + deltaDebt);
+
+      // Create invoice snapshot on server to ensure consistency
+      const invoiceData = {
+        invoiceNumber: body.invoiceNumber || `INV-${Date.now()}`,
+        sale: sale._id,
+        customer: body.customer,
+        customerName: body.customerName || '',
+        customerPhone: body.customerPhone || '',
+        customerEmail: body.customerEmail || '',
+        customerAddress: body.customerAddress || '',
+        items: body.items || [],
+        subtotal: body.subtotal || 0,
+        tax: body.tax || 0,
+        discount: body.discount || 0,
+        total: body.total || 0,
+        previousDebt: prevDebt,
+        totalOutstanding: newCustomerDebt,
+        paymentStatus: body.paymentStatus || 'unpaid',
+        paidAmount: body.paidAmount || 0,
+        paymentMethod: body.paymentMethod || 'cash',
+        notes: body.notes || '',
+        createdBy: body.createdBy || null
+      };
+
+      const invoice = await (await import('../../../lib/models/Invoice.js')).default;
+      createdInvoice = await invoice.create(invoiceData);
+    } catch (e) {
+      console.error('Error creating invoice snapshot after sale:', e);
+      // proceed without failing the sale - return sale but with invoice null
     }
-    
+
     return NextResponse.json(
-      { success: true, data: sale },
+      { success: true, data: { sale, invoice: createdInvoice } },
       { status: 201 }
     );
   } catch (error) {

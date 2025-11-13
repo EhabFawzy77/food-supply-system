@@ -1,17 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   ShoppingCart, Plus, Minus, Trash2, Search, Users, 
-  CreditCard, Banknote, Printer, Calculator, Check, X, AlertCircle
+  CreditCard, Banknote, Printer, Calculator, Check, X, AlertCircle,
+  Package, Grid, List, Zap
 } from 'lucide-react';
-import { useApp } from '../../../contexts/AppContext.jsx';
+import { useApp } from '../../../../contexts/AppContext.jsx';
 
 export default function SalesPage() {
+  const router = useRouter();
   const { success, error: showError, warning } = useApp();
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [debts, setDebts] = useState([]);
+  const [outstandingTotal, setOutstandingTotal] = useState(0);
+  const [fetchingDebts, setFetchingDebts] = useState(false);
   const [cart, setCart] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
@@ -19,13 +25,49 @@ export default function SalesPage() {
   const [discount, setDiscount] = useState(0);
   const [notes, setNotes] = useState('');
   const [showInvoice, setShowInvoice] = useState(false);
+  const [payPreviousDebts, setPayPreviousDebts] = useState(false);
   const [lastSaleId, setLastSaleId] = useState(null);
+  const [lastInvoiceId, setLastInvoiceId] = useState(null);
   const [lastPaymentMethod, setLastPaymentMethod] = useState(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [gridView, setGridView] = useState(true);
+  const [totalAmount, setTotalAmount] = useState(0);
 
   useEffect(() => {
     loadProductsAndCustomers();
   }, []);
+
+  // Fetch debts for selected customer
+  useEffect(() => {
+    const fetchDebts = async () => {
+      if (!selectedCustomer || !selectedCustomer._id) {
+        setDebts([]);
+        setOutstandingTotal(0);
+        return;
+      }
+
+      try {
+        setFetchingDebts(true);
+        const res = await fetch(`/api/customers/${selectedCustomer._id}/debts`);
+        const data = await res.json();
+        if (data.success) {
+          setDebts(data.data.invoices || []);
+          setOutstandingTotal(data.data.total || 0); // Update to read total instead of outstanding
+        } else {
+          setDebts([]);
+          setOutstandingTotal(0);
+        }
+      } catch (err) {
+        console.error('Error fetching debts:', err);
+        setDebts([]);
+        setOutstandingTotal(0);
+      } finally {
+        setFetchingDebts(false);
+      }
+    };
+
+    fetchDebts();
+  }, [selectedCustomer]);
 
   const loadProductsAndCustomers = async () => {
     try {
@@ -101,11 +143,14 @@ export default function SalesPage() {
   };
 
   const calculateRemainingDebt = () => {
-    // فقط للآجل: الإجمالي - المدفوع
+    // فقط للآجل: إجمالي دين العميل بعد هذه الفاتورة = الدين الحالي + (إجمالي الفاتورة - المدفوع)
+    // نعيد القيمة الكاملة المتبقية (ولن نعرض قيمة سالبة، نعرض 0 كحد أدنى)
     if (paymentMethod === 'credit') {
       const paid = parseFloat(paidAmount || 0);
       const total = calculateTotal();
-      return total - paid;
+      const currentDebt = selectedCustomer ? (selectedCustomer.currentDebt || 0) : 0;
+      const remaining = currentDebt + (total - paid);
+      return remaining > 0 ? remaining : 0;
     }
     return 0;
   };
@@ -115,18 +160,18 @@ export default function SalesPage() {
     if (!selectedCustomer) return false;
     
     const total = calculateTotal();
-    const paid = parseFloat(paidAmount || 0);
 
     if (paymentMethod === 'cash') {
-      // للكاش: المدفوع يجب أن يكون >= الإجمالي
-      return paid >= total;
+      // للكاش: دائماً جاهز (لأننا سنملأ المبلغ المدفوع تلقائياً بالإجمالي)
+      return true;
     }
 
     if (paymentMethod === 'credit') {
-      // للآجل: المتبقي (الإجمالي - المدفوع) يجب أن يكون <= الائتمان المتاح
-      const remainingDebt = total - paid;
+      const paid = parseFloat(paidAmount || 0);
+      // للآجل: المبلغ الإضافي المطلوب كدين من هذه الفاتورة = max(0, إجمالي الفاتورة - المدفوع)
+      const additionalDebtNeeded = Math.max(0, total - paid);
       const availableCredit = (selectedCustomer.creditLimit || 0) - (selectedCustomer.currentDebt || 0);
-      return remainingDebt <= availableCredit;
+      return additionalDebtNeeded <= availableCredit;
     }
     
     return true;
@@ -137,18 +182,18 @@ export default function SalesPage() {
     if (!selectedCustomer) return 'اختر عميل';
     
     const total = calculateTotal();
-    const paid = parseFloat(paidAmount || 0);
 
     if (paymentMethod === 'cash') {
-      if (paid < total) {
-        return `المدفوع أقل من الإجمالي. ينقص: ${(total - paid).toLocaleString()} جنيه`;
-      }
+      // لا توجد رسائل خطأ للكاش (لأن المبلغ يتم ملاؤه تلقائياً)
+      return null;
     }
 
     if (paymentMethod === 'credit') {
-      const remainingDebt = total - paid;
+      const paid = parseFloat(paidAmount || 0);
+      // المبلغ الإضافي المطلوب كدين من هذه الفاتورة
+      const additionalDebtNeeded = Math.max(0, total - paid);
       const availableCredit = (selectedCustomer.creditLimit || 0) - (selectedCustomer.currentDebt || 0);
-      if (remainingDebt > availableCredit) {
+      if (additionalDebtNeeded > availableCredit) {
         return `تجاوز حد الائتمان. المتاح: ${availableCredit.toLocaleString()} جنيه`;
       }
     }
@@ -160,8 +205,13 @@ export default function SalesPage() {
     if (!canCompleteSale()) return;
 
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    const paidAmountNum = parseFloat(paidAmount || 0);
     const total = calculateTotal();
+    const prevDebt = selectedCustomer ? (selectedCustomer.currentDebt || 0) : 0;
+    // للكاش: استخدم الإجمالي بدلاً من المبلغ المدخل (لأن المبلغ مخفي)
+    // وإذا اختار المستخدم سداد الديون السابقة مع الفاتورة فنجمعها هنا
+    const paidAmountNum = paymentMethod === 'cash'
+      ? (payPreviousDebts ? total + prevDebt : total)
+      : parseFloat(paidAmount || 0);
 
     // تحديد حالة الدفع
     let paymentStatus;
@@ -191,34 +241,102 @@ export default function SalesPage() {
       total: total,
       paymentMethod: paymentMethod,
       paymentStatus: paymentStatus,
-      paidAmount: paidAmountNum,
+  paidAmount: paidAmountNum,
+  payPreviousDebts: payPreviousDebts,
       notes: notes,
       createdBy: currentUser._id || null
       // tax is optional, defaults to 0 in backend
     };
 
     try {
-      const res = await fetch('/api/sales', {
+      // 1. Create the sale first
+      console.log('Creating sale with data:', saleData);
+      const saleRes = await fetch('/api/sales', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
         body: JSON.stringify(saleData)
       });
 
-      const result = await res.json();
+      // Defensive parse in case server returns empty body or invalid JSON
+      let saleResult = {};
+      try {
+        const saleText = await saleRes.text();
+        saleResult = saleText ? JSON.parse(saleText) : {};
+      } catch (err) {
+        console.error('Invalid JSON from sale creation response:', err);
+        saleResult = {};
+      }
+      console.log('Sale result:', saleResult);
 
-      if (result.success) {
-        setLastSaleId(result.data._id);
+      if (saleResult.success) {
+        // server returns { data: { sale, invoice } }
+        const saleId = saleResult.data && saleResult.data.sale ? saleResult.data.sale._id : null;
+        console.log('Sale created with ID:', saleId);
+        setLastSaleId(saleId);
         setLastPaymentMethod(paymentMethod);
-        setShowInvoice(true);
-        
-        // إظهار إشعار النجاح
-        success(`تم البيع بنجاح! الإجمالي: ${total.toLocaleString()} جنيه`, '✓ تم إتمام البيع', {
-          duration: 4000
-        });
-        
-        resetSale();
+
+        // 2. The server now creates an invoice snapshot when creating the sale.
+        const invoiceObj = saleResult.data && saleResult.data.invoice ? saleResult.data.invoice : null;
+
+        if (invoiceObj && invoiceObj._id) {
+          const invoiceId = invoiceObj._id;
+          setLastInvoiceId(invoiceId);
+
+          // إظهار إشعار النجاح
+          success(`تم البيع بنجاح! الإجمالي: ${total.toLocaleString()} جنيه`, '✓ تم إتمام البيع', {
+            duration: 2000
+          });
+
+          // 3. Reset the sale and redirect to invoice print page
+          resetSale();
+          setTimeout(() => {
+            router.push(`/dashboard/invoices/${invoiceId}/print`);
+          }, 500);
+        } else {
+          // Fallback: if server didn't create invoice for some reason, ask server to build invoice from the saleId
+          // This uses the invoice route's saleId handling which is less error-prone than re-sending full invoice payload from client
+          try {
+            const invoiceRes = await fetch('/api/invoices', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+              },
+              body: JSON.stringify({ saleId })
+            });
+
+            // Defensive parsing
+            let invoiceResult = {};
+            try {
+              const text = await invoiceRes.text();
+              invoiceResult = text ? JSON.parse(text) : {};
+            } catch (err) {
+              console.error('Invalid JSON from invoice creation response:', err);
+              invoiceResult = {};
+            }
+
+            if (invoiceRes.ok && invoiceResult && invoiceResult.success) {
+              const invoiceId = invoiceResult.data._id || (invoiceResult.data && invoiceResult.data._id);
+              setLastInvoiceId(invoiceId);
+              success(`تم البيع بنجاح! الإجمالي: ${total.toLocaleString()} جنيه`, '✓ تم إتمام البيع', { duration: 2000 });
+              resetSale();
+              setTimeout(() => { router.push(`/dashboard/invoices/${invoiceId}/print`); }, 500);
+            } else {
+              const errorMsg = (invoiceResult && (invoiceResult.error || invoiceResult.message)) || invoiceRes.statusText || 'فشل إنشاء الفاتورة';
+              showError(errorMsg, '❌ خطأ في إنشاء الفاتورة');
+              setShowInvoice(true);
+            }
+          } catch (err) {
+            console.error('Invoice creation fallback error:', err);
+            showError('فشل إنشاء الفاتورة', '❌ خطأ في إنشاء الفاتورة');
+            setShowInvoice(true);
+          }
+        }
       } else {
-        const errorMsg = result.error || result.message || 'فشل إتمام البيع';
+        const errorMsg = saleResult.error || saleResult.message || 'فشل إتمام البيع';
         showError(errorMsg, '❌ خطأ في البيع');
       }
     } catch (error) {
@@ -267,251 +385,302 @@ export default function SalesPage() {
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  return (
-    <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
-            <ShoppingCart className="w-8 h-8 text-indigo-600" />
-            نقطة البيع
-          </h1>
-        </div>
+  useEffect(() => {
+    const subtotal = calculateSubtotal();
+    const currentDebt = selectedCustomer ? selectedCustomer.currentDebt || 0 : 0;
+    setTotalAmount(subtotal + currentDebt);
+  }, [cart, selectedCustomer]);
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Products List */}
-          <div className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
-            <div className="mb-4">
-              <div className="relative">
-                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="ابحث عن منتج..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pr-12 pl-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
+  return (
+    <div className="min-h-screen bg-gray-100 p-4 md:p-8" dir="rtl">
+      <div className="max-w-6xl mx-auto">
+        {/* Main Invoice Container */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {/* Left: Products Grid */}
+          <div className="space-y-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="ابحث عن منتج..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pr-10 pl-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              />
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
-              {filteredProducts.map((product) => (
-                <button
-                  key={product._id}
-                  onClick={() => addToCart(product)}
-                  className="p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition text-right"
-                >
-                  <div className="font-bold text-gray-800 mb-1">{product.name}</div>
-                  <div className="text-sm text-gray-600 mb-2">{product.unit}</div>
-                  <div className="text-lg font-bold text-indigo-600">{product.sellingPrice} جنيه</div>
-                </button>
-              ))}
+            {/* Products Grid */}
+            <div className="bg-white rounded-xl shadow-md p-4 max-h-[700px] overflow-y-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {filteredProducts.map((product) => (
+                  <button
+                    key={product._id}
+                    onClick={() => addToCart(product)}
+                    className="p-3 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all hover:shadow-md"
+                  >
+                    <div className="text-sm font-bold text-gray-800 truncate">{product.name}</div>
+                    <div className="text-xs text-gray-500 mb-2">{product.unit}</div>
+                    <div className="text-indigo-600 font-bold text-lg">{product.sellingPrice}</div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Cart & Checkout */}
-          <div className="space-y-6">
-            {/* Customer Selection */}
-            <div className="bg-white rounded-lg shadow-lg p-4">
-              <label className="block font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                <Users className="w-5 h-5 text-indigo-600" />
-                العميل
-              </label>
-              <select
-                value={selectedCustomer?._id || ''}
-                onChange={(e) => {
-                  const customer = customers.find(c => c._id === e.target.value);
-                  setSelectedCustomer(customer);
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="">اختر العميل</option>
-                {customers.map((customer) => (
-                  <option key={customer._id} value={customer._id}>
-                    {customer.name}
-                  </option>
-                ))}
-              </select>
-              
-              {selectedCustomer && (
-                <div className="mt-3 p-3 bg-gray-50 rounded-lg text-sm">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-gray-600">رقم الهاتف:</span>
-                    <span className="font-semibold">{selectedCustomer.phone}</span>
+          {/* Right: Invoice Form */}
+          <div className="space-y-4">
+            {/* Invoice Header */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <div className="mb-4 pb-4 border-b-2 border-gray-200">
+                <h2 className="text-2xl font-bold text-gray-800 mb-1">فاتورة بيع</h2>
+                <p className="text-sm text-gray-600">#{Date.now().toString().slice(-6)}</p>
+              </div>
+
+              {/* Customer Section */}
+              <div className="mb-4">
+                <label className="block text-sm font-bold text-gray-700 mb-2">العميل</label>
+                <select
+                  value={selectedCustomer?._id || ''}
+                  onChange={(e) => {
+                    const customer = customers.find(c => c._id === e.target.value);
+                    setSelectedCustomer(customer);
+                    // fetch debts will be triggered by useEffect that listens to selectedCustomer
+                  }}
+                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="">اختر العميل</option>
+                  {customers.map((customer) => (
+                    <option key={customer._id} value={customer._id}>
+                      {customer.name}
+                    </option>
+                  ))}
+                </select>
+
+                {selectedCustomer && (
+                  <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <span className="text-gray-600">رقم الهاتف:</span>
+                        <div className="font-semibold text-gray-800">{selectedCustomer.phone}</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">الرصيد المتاح:</span>
+                        <div className={`font-semibold ${((selectedCustomer.creditLimit || 0) - (selectedCustomer.currentDebt || 0)) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {((selectedCustomer.creditLimit || 0) - (selectedCustomer.currentDebt || 0)).toLocaleString()} جنيه
+                        </div>
+                      </div>
+                    </div>
+                    {/* ديون العميل */}
+                    <div className="mt-3 border-t pt-3 text-xs">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-gray-600">الديون الحالية:</span>
+                          <div className="font-semibold text-red-700">{(selectedCustomer.currentDebt || 0).toLocaleString()} جنيه</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-gray-600">فواتير غير مسددة:</div>
+                          <div className="font-semibold text-gray-800">{debts.length} فاتورة</div>
+                        </div>
+                      </div>
+
+                      {fetchingDebts ? (
+                        <div className="mt-2 text-xs text-gray-600">جاري جلب الديون...</div>
+                      ) : debts && debts.length > 0 ? (
+                        <div className="mt-2 text-xs text-gray-700">
+                          <div>إجمالي مستحق من الفواتير: <span className="font-semibold">{outstandingTotal.toLocaleString()} جنيه</span></div>
+                          <div className="mt-2 space-y-1">
+                            {debts.slice(0,3).map(inv => (
+                              <div key={inv._id} className="flex items-center justify-between bg-white p-2 rounded border">
+                                <div className="text-xs">{inv.invoiceNumber || inv._id}</div>
+                                <div className="text-xs font-semibold text-red-600">{((inv.total || 0) - (inv.paidAmount || 0)).toLocaleString()} جنيه</div>
+                              </div>
+                            ))}
+                            {debts.length > 3 && <div className="text-xs text-gray-600 mt-1">عرض 3 من {debts.length} فاتورة</div>}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mt-2 text-xs text-gray-600">لا توجد فواتير غير مسددة</div>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-gray-600">حد الائتمان:</span>
-                    <span className="font-semibold text-green-600">
-                      {(selectedCustomer.creditLimit || 0).toLocaleString()} جنيه
-                    </span>
-                  </div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-gray-600">الديون الحالية:</span>
-                    <span className="font-semibold text-red-600">
-                      {(selectedCustomer.currentDebt || 0).toLocaleString()} جنيه
-                    </span>
-                  </div>
-                  <div className="flex justify-between pt-2 border-t">
-                    <span className="text-gray-600">الائتمان المتاح:</span>
-                    <span className="font-semibold text-blue-600">
-                      {((selectedCustomer.creditLimit || 0) - (selectedCustomer.currentDebt || 0)).toLocaleString()} جنيه
-                    </span>
-                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Items Table */}
+            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+              <div className="px-6 py-4 bg-gray-50 border-b-2 border-gray-200">
+                <h3 className="font-bold text-gray-800">المنتجات ({cart.length})</h3>
+              </div>
+
+              {cart.length > 0 ? (
+                <div className="divide-y-2 divide-gray-100 max-h-60 overflow-y-auto">
+                  {cart.map((item) => (
+                    <div key={item._id} className="px-6 py-3 flex items-center justify-between hover:bg-gray-50 transition">
+                      <div className="flex-1">
+                        <div className="font-semibold text-gray-800 text-sm">{item.name}</div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {item.quantity} × {item.sellingPrice} = {(item.quantity * item.sellingPrice).toLocaleString()} جنيه
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => removeFromCart(item._id)}
+                        className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="px-6 py-12 text-center text-gray-500">
+                  <ShoppingCart className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+                  <p className="text-sm">السلة فارغة</p>
                 </div>
               )}
             </div>
 
-            {/* Cart Items */}
-            <div className="bg-white rounded-lg shadow-lg p-4">
-              <h3 className="font-bold text-gray-800 mb-3 flex items-center justify-between">
-                <span>المنتجات ({cart.length})</span>
-                {cart.length > 0 && (
-                  <button onClick={() => setCart([])} className="text-red-500 text-sm hover:text-red-700">
-                    مسح الكل
-                  </button>
-                )}
-              </h3>
-              
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {cart.map((item) => (
-                  <div key={item._id} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                    <div className="flex-1">
-                      <div className="font-semibold text-gray-800">{item.name}</div>
-                      <div className="text-sm text-gray-600">{item.sellingPrice} جنيه</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => updateQuantity(item._id, item.quantity - 1)}
-                        className="w-8 h-8 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"
-                      >
-                        <Minus className="w-4 h-4 mx-auto" />
-                      </button>
-                      <input
-                        type="number"
-                        value={item.quantity}
-                        onChange={(e) => updateQuantity(item._id, parseInt(e.target.value) || 0)}
-                        className="w-16 text-center border border-gray-300 rounded-lg py-1"
-                      />
-                      <button
-                        onClick={() => updateQuantity(item._id, item.quantity + 1)}
-                        className="w-8 h-8 bg-green-100 text-green-600 rounded-lg hover:bg-green-200"
-                      >
-                        <Plus className="w-4 h-4 mx-auto" />
-                      </button>
-                      <button
-                        onClick={() => removeFromCart(item._id)}
-                        className="w-8 h-8 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300"
-                      >
-                        <Trash2 className="w-4 h-4 mx-auto" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Payment & Total */}
+            {/* Calculations */}
             {cart.length > 0 && (
-              <div className="bg-white rounded-lg shadow-lg p-4 space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-gray-600">
-                    <span>المجموع الفرعي:</span>
-                    <span className="font-semibold">{calculateSubtotal().toLocaleString()} جنيه</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">الخصم:</span>
-                    <input
-                      type="number"
-                      value={discount}
-                      onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                      className="w-32 px-3 py-1 border border-gray-300 rounded-lg text-left"
-                      placeholder="0"
-                    />
-                  </div>
-                  
-                  <div className="flex justify-between text-xl font-bold text-indigo-600 pt-2 border-t">
-                    <span>الإجمالي:</span>
-                    <span>{calculateTotal().toLocaleString()} جنيه</span>
-                  </div>
+              <div className="bg-white rounded-xl shadow-md p-6 space-y-3">
+                {/* Subtotal */}
+                <div className="flex justify-between items-center pb-3 border-b border-gray-200">
+                  <span className="text-gray-700">المجموع الفرعي:</span>
+                  <span className="font-bold text-gray-900">{calculateSubtotal().toLocaleString()} جنيه</span>
                 </div>
 
-                <div>
-                  <label className="block font-semibold text-gray-800 mb-2">طريقة الدفع</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => {
-                        setPaymentMethod('cash');
-                        setPaidAmount(''); // Reset amount when switching
-                      }}
-                      className={`p-3 rounded-lg border-2 transition ${
-                        paymentMethod === 'cash'
-                          ? 'border-green-500 bg-green-50 text-green-700'
-                          : 'border-gray-300 hover:border-green-300'
-                      }`}
-                    >
-                      <Banknote className="w-5 h-5 mx-auto mb-1" />
-                      <div className="text-sm font-semibold">كاش</div>
-                      <div className="text-xs text-gray-500">دفع كامل</div>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setPaymentMethod('credit');
-                        setPaidAmount(''); // Reset amount when switching
-                      }}
-                      className={`p-3 rounded-lg border-2 transition ${
-                        paymentMethod === 'credit'
-                          ? 'border-orange-500 bg-orange-50 text-orange-700'
-                          : 'border-gray-300 hover:border-orange-300'
-                      }`}
-                    >
-                      <CreditCard className="w-5 h-5 mx-auto mb-1" />
-                      <div className="text-sm font-semibold">آجل</div>
-                      <div className="text-xs text-gray-500">دفع جزئي/كامل</div>
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-gray-800 mb-2">
-                    {paymentMethod === 'cash' ? 'المبلغ المدفوع' : 'المبلغ المدفوع (اختياري)'}
-                  </label>
+                {/* Discount */}
+                <div className="flex justify-between items-center pb-3 border-b border-gray-200">
+                  <span className="text-gray-700">الخصم:</span>
                   <input
                     type="number"
-                    value={paidAmount}
-                    onChange={(e) => setPaidAmount(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                    placeholder={paymentMethod === 'cash' ? 'أدخل المبلغ المدفوع' : '0 (اترك فارغاً للدفع الآجل الكامل)'}
+                    value={discount}
+                    onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+                    className="w-32 px-3 py-1.5 border border-gray-300 rounded-lg text-left text-sm font-bold"
+                    min="0"
                   />
-                  
-                  {paymentMethod === 'cash' && paidAmount && calculateChange() >= 0 && (
-                    <div className="mt-2 p-2 bg-blue-50 rounded-lg text-center">
-                      <span className="text-sm text-gray-600">الباقي: </span>
-                      <span className="font-bold text-blue-600">{calculateChange().toLocaleString()} جنيه</span>
-                    </div>
-                  )}
-
-                  {paymentMethod === 'credit' && (
-                    <div className="mt-2 p-2 bg-yellow-50 rounded-lg text-center">
-                      <span className="text-sm text-gray-600">سيتم تسجيل كدين: </span>
-                      <span className="font-bold text-yellow-700">
-                        {calculateRemainingDebt().toLocaleString()} جنيه
-                      </span>
-                    </div>
-                  )}
                 </div>
 
-                {/* Error Message */}
-                {!canCompleteSale() && getErrorMessage() && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
-                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                {/* Total */}
+                <div className="flex justify-between items-center pb-3 border-b border-gray-200">
+                  <span className="font-bold text-gray-900">الإجمالي:</span>
+                  <span className="font-bold text-indigo-600 text-2xl">{calculateTotal().toLocaleString()} جنيه</span>
+                </div>
+
+                {/* Current Customer Debt */}
+                {selectedCustomer && (
+                  <div className="flex justify-between items-center pt-3 pb-3 border-b border-gray-200">
+                    <span className="text-gray-700">الديون الحالية على العميل:</span>
+                    <span className="font-bold text-red-600 text-lg">{(selectedCustomer.currentDebt || 0).toLocaleString()} جنيه</span>
+                  </div>
+                )}
+
+                {/* Total Amount (including debts) */}
+                <div className="flex justify-between items-center pt-2 text-lg">
+                  <span className="font-bold text-gray-900">الإجمالي الكلي:</span>
+                  <span className="font-bold text-red-600 text-2xl">{totalAmount.toLocaleString()} جنيه</span>
+                </div>
+              </div>
+            )}
+
+            {/* Payment Method */}
+            {cart.length > 0 && (
+              <div className="bg-white rounded-xl shadow-md p-6 space-y-4">
+                <h4 className="font-bold text-gray-800">طريقة الدفع</h4>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => {
+                      setPaymentMethod('cash');
+                      setPaidAmount(''); // يتم ملاؤها تلقائياً عند الضغط على "إتمام البيع"
+                      // افتراضيًا عند اختيار كاش نفترض رغبته في سداد الديون السابقة مع الفاتورة
+                      setPayPreviousDebts(true);
+                    }}
+                    className={`p-3 rounded-lg border-2 transition font-semibold text-sm ${
+                      paymentMethod === 'cash'
+                        ? 'border-green-500 bg-green-50 text-green-700'
+                        : 'border-gray-300 text-gray-700 hover:border-green-400'
+                    }`}
+                  >
+                    <Banknote className="w-5 h-5 mx-auto mb-1" />
+                    كاش
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPaymentMethod('credit');
+                      setPaidAmount('');
+                      setPayPreviousDebts(false);
+                    }}
+                    className={`p-3 rounded-lg border-2 transition font-semibold text-sm ${
+                      paymentMethod === 'credit'
+                        ? 'border-orange-500 bg-orange-50 text-orange-700'
+                        : 'border-gray-300 text-gray-700 hover:border-orange-400'
+                    }`}
+                  >
+                    <CreditCard className="w-5 h-5 mx-auto mb-1" />
+                    آجل
+                  </button>
+                </div>
+
+                {/* Paid Amount - Only show for credit payments */}
+                {paymentMethod === 'credit' && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                      المبلغ المسدد
+                    </label>
+                    <input
+                      type="number"
+                      value={paidAmount}
+                      onChange={(e) => setPaidAmount(e.target.value)}
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500 font-bold text-lg"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                )}
+                
+                {/* Option to pay previous debts with this sale */}
+                {selectedCustomer && (selectedCustomer.currentDebt || 0) > 0 && (
+                  <div className="mt-3">
+                    <label className="inline-flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={payPreviousDebts}
+                        onChange={(e) => setPayPreviousDebts(e.target.checked)}
+                        className="form-checkbox h-4 w-4 text-indigo-600"
+                      />
+                      <span className="text-gray-700">سداد الديون السابقة مع هذه الفاتورة ({(selectedCustomer.currentDebt || 0).toLocaleString()} جنيه)</span>
+                    </label>
+                  </div>
+                )}
+                {/* Change Display - Only for credit method */}
+                {paymentMethod === 'credit' && (
+                  <div className="p-3 rounded-lg bg-yellow-50 border border-yellow-200">
+                    <div className="text-xs text-gray-600 mb-1">سيتم تسجيل كدين:</div>
+                    <div className="font-bold text-lg text-yellow-700">
+                      {calculateRemainingDebt().toLocaleString()} جنيه
+                    </div>
+                  </div>
+                )}
+
+                {/* Error Message - Only for credit method */}
+                {paymentMethod === 'credit' && !canCompleteSale() && getErrorMessage() && (
+                  <div className="p-3 rounded-lg bg-red-50 border border-red-200 flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                     <span className="text-sm text-red-700">{getErrorMessage()}</span>
                   </div>
                 )}
 
+                {/* Complete Sale Button */}
                 <button
                   onClick={completeSale}
                   disabled={!canCompleteSale()}
-                  className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 rounded-lg font-bold flex items-center justify-center gap-2 hover:from-green-700 hover:to-green-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`w-full py-3 rounded-lg font-bold text-white text-lg transition flex items-center justify-center gap-2 ${
+                    canCompleteSale()
+                      ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg'
+                      : 'bg-gray-400 cursor-not-allowed'
+                  }`}
                 >
                   <Check className="w-6 h-6" />
                   إتمام البيع
@@ -524,7 +693,7 @@ export default function SalesPage() {
         {/* Invoice Modal */}
         {showInvoice && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-8 max-w-md w-full">
+            <div className="bg-white rounded-xl p-6 md:p-8 max-w-md w-full shadow-2xl">
               {!showCancelConfirm ? (
                 <>
                   <div className="text-center mb-6">
@@ -532,33 +701,61 @@ export default function SalesPage() {
                       <Check className="w-10 h-10 text-green-600" />
                     </div>
                     <h2 className="text-2xl font-bold text-gray-800 mb-2">تم البيع بنجاح!</h2>
-                    <p className="text-gray-600">رقم الفاتورة: INV-{Date.now()}</p>
+                    <p className="text-gray-600 text-sm">رقم الفاتورة: INV-{Date.now()}</p>
                   </div>
 
-                  <div className="space-y-3 mb-6 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">العميل:</span>
-                      <span className="font-semibold">{selectedCustomer?.name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">الإجمالي:</span>
-                      <span className="font-semibold">{calculateTotal().toLocaleString()} جنيه</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">طريقة الدفع:</span>
-                      <span className="font-semibold">{lastPaymentMethod === 'cash' ? 'كاش' : 'آجل'}</span>
+                  <div className="space-y-3 mb-6 text-sm bg-gray-50 p-4 rounded-lg">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">العميل:</span>
+                        <span className="font-semibold">{selectedCustomer?.name}</span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">الديون السابقة:</span>
+                        <span className="font-semibold text-red-700">{(selectedCustomer?.currentDebt || 0).toLocaleString()} جنيه</span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">إجمالي الفاتورة:</span>
+                        <span className="font-semibold text-green-600">{calculateTotal().toLocaleString()} جنيه</span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">الإجمالي الكلي (بما في ذلك الديون):</span>
+                        <span className="font-semibold text-indigo-700">{(totalAmount).toLocaleString()} جنيه</span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">المبلغ المسدد:</span>
+                        <span className="font-semibold">{(paymentMethod === 'cash' ? calculateTotal() : parseFloat(paidAmount || 0)).toLocaleString()} جنيه</span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">الطريقة:</span>
+                        <span className="font-semibold">{lastPaymentMethod === 'cash' ? 'كاش' : 'آجل'}</span>
+                      </div>
+
+                      {paymentMethod === 'credit' && (
+                        <div className="col-span-2">
+                          <div className="mt-2 p-3 rounded-lg bg-yellow-50 border border-yellow-200">
+                            <div className="text-xs text-gray-600">سيتم تسجيل كدين بعد هذه العملية:</div>
+                            <div className="font-bold text-lg text-yellow-700">{calculateRemainingDebt().toLocaleString()} جنيه</div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   <div className="flex gap-3">
                     <button
                       onClick={resetSale}
-                      className="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700"
+                      className="flex-1 bg-indigo-600 text-white py-2.5 rounded-lg font-semibold hover:bg-indigo-700 transition text-sm"
                     >
                       بيع جديد
                     </button>
-                    <button className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 flex items-center justify-center gap-2">
-                      <Printer className="w-5 h-5" />
+                    <button className="flex-1 bg-gray-200 text-gray-700 py-2.5 rounded-lg font-semibold hover:bg-gray-300 flex items-center justify-center gap-2 transition text-sm">
+                      <Printer className="w-4 h-4" />
                       طباعة
                     </button>
                   </div>
@@ -566,10 +763,10 @@ export default function SalesPage() {
                   {lastPaymentMethod === 'cash' && (
                     <button
                       onClick={() => setShowCancelConfirm(true)}
-                      className="w-full mt-4 bg-red-100 text-red-700 py-2 rounded-lg font-semibold hover:bg-red-200 flex items-center justify-center gap-2 border border-red-300"
+                      className="w-full mt-3 bg-red-100 text-red-700 py-2 rounded-lg font-semibold hover:bg-red-200 flex items-center justify-center gap-2 border border-red-300 transition text-sm"
                     >
-                      <X className="w-5 h-5" />
-                      إلغاء المدفوع من الكاش
+                      <X className="w-4 h-4" />
+                      إلغاء الدفع
                     </button>
                   )}
                 </>
@@ -580,23 +777,23 @@ export default function SalesPage() {
                       <AlertCircle className="w-10 h-10 text-red-600" />
                     </div>
                     <h2 className="text-2xl font-bold text-gray-800 mb-2">تأكيد الإلغاء</h2>
-                    <p className="text-gray-600">هل تريد بالفعل إلغاء هذه العملية من الكاش؟</p>
+                    <p className="text-gray-600 text-sm">هل تريد بالفعل إلغاء هذه العملية؟</p>
                   </div>
 
-                  <div className="bg-red-50 p-4 rounded-lg mb-6 text-sm text-red-700">
+                  <div className="bg-red-50 p-3 rounded-lg mb-6 text-sm text-red-700 border border-red-200">
                     سيتم إرجاع المبلغ: <span className="font-bold">{calculateTotal().toLocaleString()} جنيه</span>
                   </div>
 
                   <div className="flex gap-3">
                     <button
                       onClick={cancelCashPayment}
-                      className="flex-1 bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700"
+                      className="flex-1 bg-red-600 text-white py-2.5 rounded-lg font-semibold hover:bg-red-700 transition text-sm"
                     >
                       تأكيد الإلغاء
                     </button>
                     <button
                       onClick={() => setShowCancelConfirm(false)}
-                      className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-400"
+                      className="flex-1 bg-gray-300 text-gray-700 py-2.5 rounded-lg font-semibold hover:bg-gray-400 transition text-sm"
                     >
                       إلغاء
                     </button>

@@ -5,7 +5,7 @@ import React from 'react';
 export default async function SalePage({ params }) {
   try {
     await connectDB();
-    const { id } = params;
+    const { id } = await params;
     const sale = await Sale.findById(id)
       .populate('customer')
       .populate('items.product')
