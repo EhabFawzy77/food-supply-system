@@ -1,6 +1,7 @@
 {
   "name": "food-supply-system",
   "version": "1.0.0",
+  "type": "module",
   "description": "نظام إدارة شركة توريدات أغذية متكامل",
   "private": true,
   "scripts": {
