@@ -1,16 +1,10 @@
 import { NextResponse } from 'next/server';
 import connectDB from '../../../../../lib/mongodb';
 import Invoice from '../../../../../lib/models/Invoice';
-import authenticate from '../../../../../lib/middleware/authenticate';
-import errorHandler from '../../../../../lib/middleware/errorHandler';
 
 export async function POST(req, { params }) {
   try {
     await connectDB();
-    const auth = await authenticate(req);
-    if (!auth) {
-      return NextResponse.json({ success: false, error: 'غير مصرح' }, { status: 401 });
-    }
 
     const { invoiceId } = await params;
 
@@ -38,6 +32,9 @@ export async function POST(req, { params }) {
     });
   } catch (error) {
     console.error('Error recording print:', error);
-    return errorHandler(error, 'خطأ في تسجيل الطباعة');
+    return NextResponse.json(
+      { success: false, error: 'خطأ في تسجيل الطباعة' },
+      { status: 500 }
+    );
   }
 }

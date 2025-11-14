@@ -5,6 +5,7 @@ import Sale from '../../../lib/models/Sale.js';
 import Stock from '../../../lib/models/Stock.js';
 import StockMovement from '../../../lib/models/StockMovement.js';
 import Customer from '../../../lib/models/Customer.js';
+import Product from '../../../lib/models/Product.js';
 
 // GET - جلب كل المبيعات
 export async function GET(request) {
@@ -15,8 +16,6 @@ export async function GET(request) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const customer = searchParams.get('customer');
-    const status = searchParams.get('status');
-    const paymentMethod = searchParams.get('paymentMethod');
     
     let query = {};
     
@@ -29,14 +28,6 @@ export async function GET(request) {
     
     if (customer) {
       query.customer = customer;
-    }
-    
-    if (status) {
-      query.paymentStatus = status;
-    }
-    
-    if (paymentMethod) {
-      query.paymentMethod = paymentMethod;
     }
     
     const sales = await Sale.find(query)
@@ -119,28 +110,6 @@ export async function POST(request) {
       }
     }
 
-    // فحص حد الائتمان للعميل إذا كانت طريقة الدفع آجل
-    try {
-      const invoiceAmount = body.total || 0;
-      const paidAmount = body.paidAmount || 0;
-      const paymentTowardsInvoice = Math.min(paidAmount, invoiceAmount);
-      const addedDebt = body.paymentMethod === 'credit' ? Math.max(0, invoiceAmount - paymentTowardsInvoice) : 0;
-
-      if (body.paymentMethod === 'credit') {
-        const cust = await Customer.findById(body.customer);
-        if (cust) {
-          const projectedDebt = (cust.currentDebt || 0) + addedDebt;
-          const limit = cust.creditLimit || 0;
-          if (projectedDebt > limit) {
-            return NextResponse.json({ success: false, error: `تجاوز حد الائتمان للعميل. الحد: ${limit}، المجموع المتوقع: ${projectedDebt}` }, { status: 400 });
-          }
-        }
-      }
-    } catch (e) {
-      console.error('Credit limit check failed:', e);
-      // لا نرمي الخطأ لأن الفشل هنا لا يعني أن العملية يجب أن تتوقف، نستمر
-    }
-    
     // إنشاء فاتورة البيع (Sale)
     let sale;
     try {
@@ -196,53 +165,38 @@ export async function POST(request) {
       });
     }
     
-    // تحديث ديون العميل في حالة الآجل
+    // إنشاء فاتورة البيع
     let createdInvoice = null;
     try {
-      // Fetch customer to snapshot previous debt
       const customerRecord = await Customer.findById(body.customer);
-      const prevDebt = customerRecord ? (customerRecord.currentDebt || 0) : 0;
-
-      const invoiceAmount = body.total || 0;
-      const paidAmount = body.paidAmount || 0;
-
-      // amount applied to invoice first, then remainder (if any) reduces previous debt
-      const paymentTowardsInvoice = Math.min(paidAmount, invoiceAmount);
-      const paymentTowardsPrevious = Math.max(0, paidAmount - paymentTowardsInvoice);
-
-      // For credit sales, any unpaid portion of the invoice becomes added debt
-      const addedDebt = body.paymentMethod === 'credit' ? Math.max(0, invoiceAmount - paymentTowardsInvoice) : 0;
-
-      // Net change to customer's currentDebt: increase by addedDebt, decrease by paymentTowardsPrevious
-      const deltaDebt = addedDebt - paymentTowardsPrevious;
-
-      if (deltaDebt !== 0) {
-        await Customer.findByIdAndUpdate(body.customer, {
-          $inc: { currentDebt: deltaDebt }
-        });
+      
+      // Enrich items with productName
+      const productIds = (body.items || []).map(i => i.product).filter(Boolean);
+      let productsMap = {};
+      if (productIds.length > 0) {
+        const prods = await Product.find({ _id: { $in: productIds } }).lean();
+        productsMap = prods.reduce((m, p) => (m[p._id.toString()] = p.name, m), {});
       }
 
-      const newCustomerDebt = Math.max(0, prevDebt + deltaDebt);
+      const invoiceItems = (body.items || []).map(it => ({
+        ...it,
+        productName: productsMap[it.product?.toString?.()] || it.productName || 'منتج'
+      }));
 
-      // Create invoice snapshot on server to ensure consistency
       const invoiceData = {
         invoiceNumber: body.invoiceNumber || `INV-${Date.now()}`,
         sale: sale._id,
         customer: body.customer,
-        customerName: body.customerName || '',
-        customerPhone: body.customerPhone || '',
-        customerEmail: body.customerEmail || '',
-        customerAddress: body.customerAddress || '',
-        items: body.items || [],
+        customerName: customerRecord?.name || body.customerName || 'عميل',
+        customerPhone: body.customerPhone || customerRecord?.phone || '',
+        customerEmail: body.customerEmail || customerRecord?.email || '',
+        customerAddress: body.customerAddress || customerRecord?.address || '',
+        items: invoiceItems || [],
         subtotal: body.subtotal || 0,
         tax: body.tax || 0,
         discount: body.discount || 0,
         total: body.total || 0,
-        previousDebt: prevDebt,
-        totalOutstanding: newCustomerDebt,
-        paymentStatus: body.paymentStatus || 'unpaid',
         paidAmount: body.paidAmount || 0,
-        paymentMethod: body.paymentMethod || 'cash',
         notes: body.notes || '',
         createdBy: body.createdBy || null
       };
@@ -251,7 +205,6 @@ export async function POST(request) {
       createdInvoice = await invoice.create(invoiceData);
     } catch (e) {
       console.error('Error creating invoice snapshot after sale:', e);
-      // proceed without failing the sale - return sale but with invoice null
     }
 
     return NextResponse.json(

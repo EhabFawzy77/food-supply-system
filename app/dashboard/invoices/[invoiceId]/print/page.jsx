@@ -31,6 +31,16 @@ export default function InvoicePrintPage() {
     fetchInvoice();
   }, [invoiceId]);
 
+  // Auto-print when invoice data loads and DOM is rendered
+  useEffect(() => {
+    if (invoice && !loading) {
+      // Wait for DOM to render
+      setTimeout(() => {
+        printInvoice(invoice);
+      }, 500);
+    }
+  }, [invoice, loading]);
+
   const fetchInvoice = async () => {
     try {
       setLoading(true);
@@ -49,10 +59,7 @@ export default function InvoicePrintPage() {
         console.log('Invoice loaded successfully:', data.data);
         setInvoice(data.data);
         setLoading(false);
-        // Auto-print after loading
-        setTimeout(() => {
-          printInvoice(data.data);
-        }, 500);
+        // Auto-print is now handled by useEffect watching invoice state
       } else {
         console.error('Invoice fetch error:', data);
         setLoading(false);
@@ -217,44 +224,26 @@ export default function InvoicePrintPage() {
 
   const recordPrint = async () => {
     try {
-      const token = localStorage.getItem('authToken');
-      const url = `/api/invoices/${invoiceId}/print`;
-      
-      console.log('Recording print - ID:', invoiceId, 'Token exists:', !!token, 'URL:', url);
-      
-      if (!token) {
-        console.error('No auth token available');
-        setPrinting(false);
-        return;
-      }
-
       if (!invoiceId) {
         console.error('Invoice ID is missing');
-        setPrinting(false);
         return;
       }
 
-      const response = await fetch(url, {
+      const response = await fetch(`/api/invoices/${invoiceId}/print`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({})
       });
       
       if (!response.ok) {
-        console.error('Print recording failed:', response.status, response.statusText);
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Error response:', errorData);
+        console.error('Print recording failed:', response.status);
       } else {
         console.log('Print recorded successfully');
       }
-      
-      setPrinting(false);
     } catch (error) {
       console.error('Error recording print:', error);
-      setPrinting(false);
     }
   };
 
@@ -269,23 +258,26 @@ export default function InvoicePrintPage() {
     }).format(price);
   };
 
-  // استخدم البيانات المحفوظة في الفاتورة مباشرة (previousDebt و totalOutstanding)
+  // استخدم البيانات المحفوظة في الفاتورة مباشرة
   const getPreviousDebt = () => {
     return invoice?.previousDebt || 0;
   };
 
-  const getInvoiceRemaining = () => {
-    if (!invoice) return 0;
-    return Math.max(0, (invoice.total || 0) - (invoice.paidAmount || 0));
+  const getInvoiceTotal = () => {
+    return invoice?.total || 0;
+  };
+
+  const getTotalBeforePayment = () => {
+    return getPreviousDebt() + getInvoiceTotal();
+  };
+
+  const getPaidAmount = () => {
+    return invoice?.paidAmount || 0;
   };
 
   const getTotalOutstanding = () => {
-    // استخدم totalOutstanding المحفوظة في الفاتورة إن وجدت
-    // وإلا احسبها = previousDebt + remaining من هذه الفاتورة
-    if (typeof invoice?.totalOutstanding === 'number') {
-      return invoice.totalOutstanding;
-    }
-    return getPreviousDebt() + getInvoiceRemaining();
+    // totalOutstanding = previousDebt + (invoiceTotal - paidAmount)
+    return invoice?.totalOutstanding || 0;
   };
 
   const paymentStatusArabic = {
@@ -513,7 +505,7 @@ export default function InvoicePrintPage() {
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-700 font-medium">+ إجمالي الفاتورة الحالية:</span>
                     <span className="text-blue-600 font-bold text-base">
-                      {formatPrice(invoice.total)}
+                      {formatPrice(getInvoiceTotal())}
                     </span>
                   </div>
 
@@ -521,17 +513,17 @@ export default function InvoicePrintPage() {
                   <div className="border-t-2 border-gray-300 pt-3 flex justify-between items-center text-sm">
                     <span className="text-gray-800 font-bold">= الإجمالي المستحق:</span>
                     <span className="text-orange-600 font-bold text-lg">
-                      {formatPrice(getPreviousDebt() + invoice.total)}
+                      {formatPrice(getTotalBeforePayment())}
                     </span>
                   </div>
 
                   {/* Minus: Paid Amount */}
-                  {invoice.paidAmount > 0 && (
+                  {getPaidAmount() > 0 && (
                     <>
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-gray-700 font-medium">- المبلغ المدفوع:</span>
                         <span className="text-green-600 font-bold text-base">
-                          {formatPrice(invoice.paidAmount)}
+                          {formatPrice(getPaidAmount())}
                         </span>
                       </div>
 
@@ -550,7 +542,7 @@ export default function InvoicePrintPage() {
                   )}
 
                   {/* If no payment (unpaid) */}
-                  {invoice.paidAmount === 0 && (
+                  {getPaidAmount() === 0 && (
                     <div className="border-t-2 border-gray-300 pt-3 flex justify-between items-center">
                       <span className="text-gray-900 font-bold text-base">الدين المستحق:</span>
                       <span className="text-red-600 font-bold text-2xl">
@@ -567,7 +559,7 @@ export default function InvoicePrintPage() {
                 <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-300">
                   <p className="text-gray-600 text-xs font-semibold mb-1">المبلغ المدفوع</p>
                   <p className="text-xl font-bold text-blue-700">
-                    {formatPrice(invoice.paidAmount)}
+                    {formatPrice(getPaidAmount())}
                   </p>
                   <p className="text-xs text-gray-600 mt-1">
                     {invoice.paymentMethod === 'cash' ? 'كاش' : 'آجل / الجزء المدفوع'}

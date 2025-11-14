@@ -7,7 +7,7 @@ export async function GET(req, { params }) {
   try {
     await connectDB();
 
-    const { customerId } = params;
+    const { customerId } = await params;
     if (!customerId) {
       return NextResponse.json({ success: false, error: 'معرف العميل مطلوب' }, { status: 400 });
     }

@@ -359,7 +359,15 @@ export default function InvoiceDetailPage() {
               </div>
 
               {(() => {
-                const prevDebt = invoice.previousDebt || 0;
+                const prevDebt = (() => {
+                  if (invoice?.previousDebt !== undefined && invoice.previousDebt !== null && invoice.previousDebt >= 0) {
+                    return invoice.previousDebt;
+                  }
+                  // Fallback للفواتير القديمة: احسب previousDebt من totalOutstanding
+                  const invoiceRemaining = Math.max(0, (invoice.total || 0) - (invoice.paidAmount || 0));
+                  return Math.max(0, (invoice.totalOutstanding || 0) - invoiceRemaining);
+                })();
+                
                 const invoiceRemaining = Math.max(0, (invoice.total || 0) - (invoice.paidAmount || 0));
                 const totalOutstanding = (typeof invoice.totalOutstanding === 'number')
                   ? invoice.totalOutstanding

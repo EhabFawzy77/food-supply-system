@@ -8,7 +8,7 @@ export async function POST(req, context) {
     await connectDB();
     
     const { params } = context;
-    const saleId = params.id;
+    const saleId = (await params).id;
 
     // التحقق من المستخدم
     const user = await authenticate(req);

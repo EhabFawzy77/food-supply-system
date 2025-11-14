@@ -25,7 +25,6 @@ export default function SalesPage() {
   const [discount, setDiscount] = useState(0);
   const [notes, setNotes] = useState('');
   const [showInvoice, setShowInvoice] = useState(false);
-  const [payPreviousDebts, setPayPreviousDebts] = useState(false);
   const [lastSaleId, setLastSaleId] = useState(null);
   const [lastInvoiceId, setLastInvoiceId] = useState(null);
   const [lastPaymentMethod, setLastPaymentMethod] = useState(null);
@@ -143,14 +142,14 @@ export default function SalesPage() {
   };
 
   const calculateRemainingDebt = () => {
-    // فقط للآجل: إجمالي دين العميل بعد هذه الفاتورة = الدين الحالي + (إجمالي الفاتورة - المدفوع)
-    // نعيد القيمة الكاملة المتبقية (ولن نعرض قيمة سالبة، نعرض 0 كحد أدنى)
+    // فقط للآجل: الدين الحالي + الفاتورة الحالية - المبلغ المدفوع
     if (paymentMethod === 'credit') {
       const paid = parseFloat(paidAmount || 0);
       const total = calculateTotal();
       const currentDebt = selectedCustomer ? (selectedCustomer.currentDebt || 0) : 0;
-      const remaining = currentDebt + (total - paid);
-      return remaining > 0 ? remaining : 0;
+      const totalDebtBeforePayment = currentDebt + total;
+      const remaining = Math.max(0, totalDebtBeforePayment - paid);
+      return remaining;
     }
     return 0;
   };
@@ -162,16 +161,20 @@ export default function SalesPage() {
     const total = calculateTotal();
 
     if (paymentMethod === 'cash') {
-      // للكاش: دائماً جاهز (لأننا سنملأ المبلغ المدفوع تلقائياً بالإجمالي)
+      // الكاش: دائماً جاهز لأن العميل يدفع كل الإجمالي
       return true;
     }
 
     if (paymentMethod === 'credit') {
       const paid = parseFloat(paidAmount || 0);
-      // للآجل: المبلغ الإضافي المطلوب كدين من هذه الفاتورة = max(0, إجمالي الفاتورة - المدفوع)
-      const additionalDebtNeeded = Math.max(0, total - paid);
-      const availableCredit = (selectedCustomer.creditLimit || 0) - (selectedCustomer.currentDebt || 0);
-      return additionalDebtNeeded <= availableCredit;
+      
+      // للآجل: التحقق من أن الدين الكلي لا يتجاوز حد الائتمان
+      const currentDebt = selectedCustomer.currentDebt || 0;
+      const totalDebtNeeded = currentDebt + total;
+      const remainingDebtAfterPayment = totalDebtNeeded - paid;
+      const availableCredit = (selectedCustomer.creditLimit || 0);
+      
+      return remainingDebtAfterPayment <= availableCredit;
     }
     
     return true;
@@ -184,16 +187,17 @@ export default function SalesPage() {
     const total = calculateTotal();
 
     if (paymentMethod === 'cash') {
-      // لا توجد رسائل خطأ للكاش (لأن المبلغ يتم ملاؤه تلقائياً)
       return null;
     }
 
     if (paymentMethod === 'credit') {
       const paid = parseFloat(paidAmount || 0);
-      // المبلغ الإضافي المطلوب كدين من هذه الفاتورة
-      const additionalDebtNeeded = Math.max(0, total - paid);
-      const availableCredit = (selectedCustomer.creditLimit || 0) - (selectedCustomer.currentDebt || 0);
-      if (additionalDebtNeeded > availableCredit) {
+      const currentDebt = selectedCustomer.currentDebt || 0;
+      const totalDebtNeeded = currentDebt + total;
+      const remainingDebtAfterPayment = totalDebtNeeded - paid;
+      const availableCredit = (selectedCustomer.creditLimit || 0);
+      
+      if (remainingDebtAfterPayment > availableCredit) {
         return `تجاوز حد الائتمان. المتاح: ${availableCredit.toLocaleString()} جنيه`;
       }
     }
@@ -206,25 +210,24 @@ export default function SalesPage() {
 
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
     const total = calculateTotal();
-    const prevDebt = selectedCustomer ? (selectedCustomer.currentDebt || 0) : 0;
-    // للكاش: استخدم الإجمالي بدلاً من المبلغ المدخل (لأن المبلغ مخفي)
-    // وإذا اختار المستخدم سداد الديون السابقة مع الفاتورة فنجمعها هنا
-    const paidAmountNum = paymentMethod === 'cash'
-      ? (payPreviousDebts ? total + prevDebt : total)
-      : parseFloat(paidAmount || 0);
+    
+    // للكاش: يدفع المبلغ الكامل من الفاتورة
+    // للآجل: يدفع المبلغ المدخل (أو 0 إذا لم يدخل شيء)
+    let paidAmountNum;
+    if (paymentMethod === 'cash') {
+      paidAmountNum = total;
+    } else {
+      paidAmountNum = parseFloat(paidAmount || 0);
+    }
 
     // تحديد حالة الدفع
     let paymentStatus;
-    if (paymentMethod === 'cash') {
-      paymentStatus = 'paid'; // الكاش دائماً paid
-    } else if (paymentMethod === 'credit') {
-      if (paidAmountNum >= total) {
-        paymentStatus = 'paid';
-      } else if (paidAmountNum > 0) {
-        paymentStatus = 'partial';
-      } else {
-        paymentStatus = 'unpaid';
-      }
+    if (paidAmountNum >= total) {
+      paymentStatus = 'paid';
+    } else if (paidAmountNum > 0) {
+      paymentStatus = 'partial';
+    } else {
+      paymentStatus = 'unpaid';
     }
 
     const saleData = {
@@ -241,15 +244,12 @@ export default function SalesPage() {
       total: total,
       paymentMethod: paymentMethod,
       paymentStatus: paymentStatus,
-  paidAmount: paidAmountNum,
-  payPreviousDebts: payPreviousDebts,
+      paidAmount: paidAmountNum,
       notes: notes,
       createdBy: currentUser._id || null
-      // tax is optional, defaults to 0 in backend
     };
 
     try {
-      // 1. Create the sale first
       console.log('Creating sale with data:', saleData);
       const saleRes = await fetch('/api/sales', {
         method: 'POST',
@@ -260,7 +260,6 @@ export default function SalesPage() {
         body: JSON.stringify(saleData)
       });
 
-      // Defensive parse in case server returns empty body or invalid JSON
       let saleResult = {};
       try {
         const saleText = await saleRes.text();
@@ -272,32 +271,26 @@ export default function SalesPage() {
       console.log('Sale result:', saleResult);
 
       if (saleResult.success) {
-        // server returns { data: { sale, invoice } }
         const saleId = saleResult.data && saleResult.data.sale ? saleResult.data.sale._id : null;
         console.log('Sale created with ID:', saleId);
         setLastSaleId(saleId);
         setLastPaymentMethod(paymentMethod);
 
-        // 2. The server now creates an invoice snapshot when creating the sale.
         const invoiceObj = saleResult.data && saleResult.data.invoice ? saleResult.data.invoice : null;
 
         if (invoiceObj && invoiceObj._id) {
           const invoiceId = invoiceObj._id;
           setLastInvoiceId(invoiceId);
 
-          // إظهار إشعار النجاح
           success(`تم البيع بنجاح! الإجمالي: ${total.toLocaleString()} جنيه`, '✓ تم إتمام البيع', {
             duration: 2000
           });
 
-          // 3. Reset the sale and redirect to invoice print page
           resetSale();
           setTimeout(() => {
             router.push(`/dashboard/invoices/${invoiceId}/print`);
           }, 500);
         } else {
-          // Fallback: if server didn't create invoice for some reason, ask server to build invoice from the saleId
-          // This uses the invoice route's saleId handling which is less error-prone than re-sending full invoice payload from client
           try {
             const invoiceRes = await fetch('/api/invoices', {
               method: 'POST',
@@ -308,7 +301,6 @@ export default function SalesPage() {
               body: JSON.stringify({ saleId })
             });
 
-            // Defensive parsing
             let invoiceResult = {};
             try {
               const text = await invoiceRes.text();
@@ -593,9 +585,7 @@ export default function SalesPage() {
                   <button
                     onClick={() => {
                       setPaymentMethod('cash');
-                      setPaidAmount(''); // يتم ملاؤها تلقائياً عند الضغط على "إتمام البيع"
-                      // افتراضيًا عند اختيار كاش نفترض رغبته في سداد الديون السابقة مع الفاتورة
-                      setPayPreviousDebts(true);
+                      setPaidAmount('');
                     }}
                     className={`p-3 rounded-lg border-2 transition font-semibold text-sm ${
                       paymentMethod === 'cash'
@@ -610,7 +600,6 @@ export default function SalesPage() {
                     onClick={() => {
                       setPaymentMethod('credit');
                       setPaidAmount('');
-                      setPayPreviousDebts(false);
                     }}
                     className={`p-3 rounded-lg border-2 transition font-semibold text-sm ${
                       paymentMethod === 'credit'
@@ -623,7 +612,33 @@ export default function SalesPage() {
                   </button>
                 </div>
 
-                {/* Paid Amount - Only show for credit payments */}
+                {/* Total Amount Section */}
+                <div className="p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-700">الفاتورة الحالية:</span>
+                      <span className="font-bold text-blue-600">{calculateTotal().toLocaleString()} جنيه</span>
+                    </div>
+                    
+                    {selectedCustomer && (selectedCustomer.currentDebt || 0) > 0 && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-700">+ الديون السابقة:</span>
+                        <span className="font-bold text-red-600">{(selectedCustomer.currentDebt || 0).toLocaleString()} جنيه</span>
+                      </div>
+                    )}
+                    
+                    {selectedCustomer && (selectedCustomer.currentDebt || 0) > 0 && (
+                      <div className="border-t border-blue-300 pt-2 flex justify-between items-center">
+                        <span className="font-bold text-gray-900">= الإجمالي الكلي:</span>
+                        <span className="font-bold text-lg text-orange-600">
+                          {((selectedCustomer.currentDebt || 0) + calculateTotal()).toLocaleString()} جنيه
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Paid Amount Input - only for credit */}
                 {paymentMethod === 'credit' && (
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">
@@ -637,34 +652,43 @@ export default function SalesPage() {
                       placeholder="0"
                       min="0"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      ادخل أي مبلغ من الإجمالي الكلي - الباقي سيكون ديون متبقية
+                    </p>
                   </div>
                 )}
-                
-                {/* Option to pay previous debts with this sale */}
-                {selectedCustomer && (selectedCustomer.currentDebt || 0) > 0 && (
-                  <div className="mt-3">
-                    <label className="inline-flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={payPreviousDebts}
-                        onChange={(e) => setPayPreviousDebts(e.target.checked)}
-                        className="form-checkbox h-4 w-4 text-indigo-600"
-                      />
-                      <span className="text-gray-700">سداد الديون السابقة مع هذه الفاتورة ({(selectedCustomer.currentDebt || 0).toLocaleString()} جنيه)</span>
+
+                {/* Cash Display - shows total that must be paid */}
+                {paymentMethod === 'cash' && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                      المبلغ المدفوع (كاش - يجب دفع المبلغ كاملاً)
                     </label>
+                    <input
+                      type="number"
+                      value={calculateTotal()}
+                      disabled
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 bg-gray-100 rounded-lg font-bold text-lg text-gray-700 cursor-not-allowed"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      الكاش يجب أن يدفع الفاتورة الحالية كاملة
+                      {selectedCustomer && (selectedCustomer.currentDebt || 0) > 0 && 
+                        ` + الديون السابقة (${(selectedCustomer.currentDebt || 0).toLocaleString()} جنيه)`}
+                    </p>
                   </div>
                 )}
-                {/* Change Display - Only for credit method */}
+
+                {/* Remaining Debt Display - Only for credit */}
                 {paymentMethod === 'credit' && (
                   <div className="p-3 rounded-lg bg-yellow-50 border border-yellow-200">
-                    <div className="text-xs text-gray-600 mb-1">سيتم تسجيل كدين:</div>
+                    <div className="text-xs text-gray-600 mb-1">الدين المتبقي بعد الدفع:</div>
                     <div className="font-bold text-lg text-yellow-700">
                       {calculateRemainingDebt().toLocaleString()} جنيه
                     </div>
                   </div>
                 )}
 
-                {/* Error Message - Only for credit method */}
+                {/* Error Message - Only for credit */}
                 {paymentMethod === 'credit' && !canCompleteSale() && getErrorMessage() && (
                   <div className="p-3 rounded-lg bg-red-50 border border-red-200 flex items-start gap-2">
                     <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
@@ -728,7 +752,12 @@ export default function SalesPage() {
 
                       <div className="flex justify-between">
                         <span className="text-gray-600">المبلغ المسدد:</span>
-                        <span className="font-semibold">{(paymentMethod === 'cash' ? calculateTotal() : parseFloat(paidAmount || 0)).toLocaleString()} جنيه</span>
+                        <span className="font-semibold">
+                          {paymentMethod === 'cash'
+                            ? total.toLocaleString()
+                            : (parseFloat(paidAmount || 0)).toLocaleString()}
+                          {' جنيه'}
+                        </span>
                       </div>
 
                       <div className="flex justify-between">
