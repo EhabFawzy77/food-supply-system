@@ -83,13 +83,18 @@ export async function POST(request) {
         expiryDate: item.expiryDate,
         status: 'available'
       });
-      
+
+      // تحديث سعر الشراء للمنتج
+      await Product.findByIdAndUpdate(item.product, {
+        purchasePrice: item.unitPrice
+      });
+
       // تسجيل حركة المخزون
       const currentStock = await Stock.aggregate([
         { $match: { product: item.product } },
         { $group: { _id: null, total: { $sum: '$quantity' } } }
       ]);
-      
+
       await StockMovement.create({
         product: item.product,
         type: 'in',
