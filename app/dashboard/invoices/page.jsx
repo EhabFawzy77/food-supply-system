@@ -171,14 +171,14 @@ export default function InvoicesPage() {
   };
 
   const StatCard = ({ icon: Icon, label, value, color }) => (
-    <div className={`bg-white rounded-lg shadow-lg p-4 border-r-4 ${color}`}>
+    <div className={`bg-white rounded-lg shadow-lg p-3 border-r-4 ${color}`}>
       <div className="flex items-center justify-between mb-2">
-        <div className={`p-2 rounded-lg ${color.replace('border', 'bg').replace('600', '100')}`}>
-          <Icon className={`w-5 h-5 ${color.replace('border', 'text')}`} />
+        <div className={`p-1 rounded-lg ${color.replace('border', 'bg').replace('600', '100')}`}>
+          <Icon className={`w-4 h-4 ${color.replace('border', 'text')}`} />
         </div>
       </div>
-      <div className="text-xl font-bold text-gray-800 mb-1">{value}</div>
-      <div className="text-gray-600 font-semibold text-sm">{label}</div>
+      <div className="text-lg font-bold text-gray-800 mb-1">{value}</div>
+      <div className="text-gray-600 font-semibold text-xs">{label}</div>
     </div>
   );
 
@@ -216,7 +216,7 @@ export default function InvoicesPage() {
 
           {/* Stats */}
           {stats && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
               <StatCard
                 icon={FileText}
                 label="إجمالي الفواتير"

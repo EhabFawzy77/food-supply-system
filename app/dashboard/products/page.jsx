@@ -193,33 +193,33 @@ export default function ProductsManagement() {
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredProducts.map((product) => (
-            <div key={product._id} className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition">
-              <div className="flex justify-between items-start mb-4">
+            <div key={product._id} className="bg-white rounded-lg shadow-lg p-4 hover:shadow-xl transition">
+              <div className="flex justify-between items-start mb-3">
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-1">{product.name}</h3>
-                  <span className="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">
+                  <h3 className="text-lg font-bold text-gray-800 mb-1">{product.name}</h3>
+                  <span className="inline-block px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-xs">
                     {product.category}
                   </span>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-1">
                   <button
                     onClick={() => handleEdit(product)}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition"
                   >
-                    <Edit className="w-5 h-5" />
+                    <Edit className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(product._id)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                    className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition"
                   >
-                    <Trash2 className="w-5 h-5" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
-              <div className="space-y-2 text-gray-600">
+              <div className="space-y-1 text-gray-600 text-sm">
                 <div className="flex justify-between">
                   <span>الوحدة:</span>
                   <span className="font-semibold">{product.unit}</span>
@@ -241,13 +241,13 @@ export default function ProductsManagement() {
                 {product.supplier && (
                   <div className="flex justify-between">
                     <span>المورد:</span>
-                    <span className="font-semibold text-sm">{product.supplier.name}</span>
+                    <span className="font-semibold text-xs">{product.supplier.name}</span>
                   </div>
                 )}
                 <div className="flex justify-between items-center pt-2 border-t">
                   <span>الحد الأدنى:</span>
                   <span className="flex items-center gap-1 font-semibold">
-                    <AlertTriangle className="w-4 h-4 text-orange-500" />
+                    <AlertTriangle className="w-3 h-3 text-orange-500" />
                     {product.minStockLevel || 0} {product.unit}
                   </span>
                 </div>

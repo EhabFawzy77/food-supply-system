@@ -253,37 +253,37 @@ export default function CustomersPage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <Users className="w-8 h-8 opacity-80" />
-                <span className="text-3xl font-bold">{customers.length}</span>
+                <Users className="w-6 h-6 opacity-80" />
+                <span className="text-2xl font-bold">{customers.length}</span>
               </div>
-              <div className="text-sm font-semibold">إجمالي العملاء</div>
+              <div className="text-xs font-semibold">إجمالي العملاء</div>
             </div>
 
-            <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-4 rounded-lg">
+            <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-3 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <AlertCircle className="w-8 h-8 opacity-80" />
-                <span className="text-3xl font-bold">{customersWithDebt}</span>
+                <AlertCircle className="w-6 h-6 opacity-80" />
+                <span className="text-2xl font-bold">{customersWithDebt}</span>
               </div>
-              <div className="text-sm font-semibold">عملاء لديهم ديون</div>
+              <div className="text-xs font-semibold">عملاء لديهم ديون</div>
             </div>
 
-            <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 rounded-lg">
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-3 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <DollarSign className="w-8 h-8 opacity-80" />
-                <span className="text-2xl font-bold">{totalDebt.toLocaleString()}</span>
+                <DollarSign className="w-6 h-6 opacity-80" />
+                <span className="text-xl font-bold">{totalDebt.toLocaleString()}</span>
               </div>
-              <div className="text-sm font-semibold">إجمالي الديون (جنيه)</div>
+              <div className="text-xs font-semibold">إجمالي الديون (جنيه)</div>
             </div>
 
-            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-lg">
+            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-3 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <CreditCard className="w-8 h-8 opacity-80" />
-                <span className="text-2xl font-bold">{totalCreditLimit.toLocaleString()}</span>
+                <CreditCard className="w-6 h-6 opacity-80" />
+                <span className="text-xl font-bold">{totalCreditLimit.toLocaleString()}</span>
               </div>
-              <div className="text-sm font-semibold">حد الائتمان الكلي</div>
+              <div className="text-xs font-semibold">حد الائتمان الكلي</div>
             </div>
           </div>
         </div>
@@ -303,22 +303,22 @@ export default function CustomersPage() {
         </div>
 
         {/* Customers Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredCustomers.map((customer) => (
-            <div key={customer._id} className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
-                    <span className="text-indigo-600 font-bold text-lg">
+            <div key={customer._id} className="bg-white rounded-lg shadow-lg p-4 hover:shadow-xl transition">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                    <span className="text-indigo-600 font-bold text-base">
                       {customer.name.charAt(0)}
                     </span>
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-800">{customer.name}</h3>
-                    <p className="text-sm text-gray-600">{customer.businessName}</p>
+                    <h3 className="font-bold text-gray-800 text-sm">{customer.name}</h3>
+                    <p className="text-xs text-gray-600">{customer.businessName}</p>
                   </div>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                   customer.customerType === 'wholesale'
                     ? 'bg-purple-100 text-purple-700'
                     : 'bg-blue-100 text-blue-700'
@@ -327,31 +327,31 @@ export default function CustomersPage() {
                 </span>
               </div>
 
-              <div className="space-y-2 text-sm mb-4">
+              <div className="space-y-1 text-xs mb-3">
                 <div className="flex items-center gap-2 text-gray-600">
-                  <Phone className="w-4 h-4" />
+                  <Phone className="w-3 h-3" />
                   <span>{customer.phone}</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-600">
-                  <MapPin className="w-4 h-4" />
+                  <MapPin className="w-3 h-3" />
                   <span>{customer.address}</span>
                 </div>
               </div>
 
-              <div className="space-y-2 mb-4 pt-4 border-t">
-                <div className="flex justify-between text-sm">
+              <div className="space-y-1 mb-3 pt-3 border-t">
+                <div className="flex justify-between text-xs">
                   <span className="text-gray-600">إجمالي المشتريات:</span>
                   <span className="font-semibold text-green-600">
                     {(Number(customer.totalPurchases) || 0).toLocaleString()} جنيه
                   </span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-xs">
                   <span className="text-gray-600">حد الائتمان:</span>
                   <span className="font-semibold text-blue-600">
                     {(Number(customer.creditLimit) || 0).toLocaleString()} جنيه
                   </span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-xs">
                   <span className="text-gray-600">الديون الحالية:</span>
                   <span className={`font-semibold ${
                     (Number(customer.currentDebt) || 0) > 0 ? 'text-red-600' : 'text-green-600'
@@ -363,7 +363,7 @@ export default function CustomersPage() {
 
               {(Number(customer.currentDebt) || 0) > 0 && (
                 <>
-                  <div className="mb-4">
+                  <div className="mb-3">
                     <div className="flex justify-between text-xs text-gray-600 mb-1">
                       <span>الائتمان المستخدم</span>
                       <span>{
@@ -372,11 +372,11 @@ export default function CustomersPage() {
                           : '0'
                       }%</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className={`h-2 rounded-full ${
-                          ((Number(customer.currentDebt) || 0) / (Number(customer.creditLimit) || 1)) > 0.8 
-                            ? 'bg-red-500' 
+                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                      <div
+                        className={`h-1.5 rounded-full ${
+                          ((Number(customer.currentDebt) || 0) / (Number(customer.creditLimit) || 1)) > 0.8
+                            ? 'bg-red-500'
                             : 'bg-orange-500'
                         }`}
                         style={{ width: `${((Number(customer.currentDebt) || 0) / (Number(customer.creditLimit) || 1)) * 100}%` }}
@@ -384,19 +384,19 @@ export default function CustomersPage() {
                     </div>
                   </div>
                   {/* جدول الفواتير الآجلة والدفعات */}
-                  <div className="mb-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div className="font-bold text-sm text-orange-700 mb-2">فواتير آجل غير مسددة:</div>
+                  <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="font-bold text-xs text-orange-700 mb-2">فواتير آجل غير مسددة:</div>
                     <AsyncCustomerInvoices customerId={customer._id} />
                   </div>
                 </>
               )}
 
-              <div className="flex gap-2">
+              <div className="flex gap-1">
                 <button
                   onClick={() => handleEdit(customer)}
-                  className="flex-1 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition font-semibold text-sm flex items-center justify-center gap-1"
+                  className="flex-1 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition font-semibold text-xs flex items-center justify-center gap-1"
                 >
-                  <Edit className="w-4 h-4" />
+                  <Edit className="w-3 h-3" />
                   تعديل
                 </button>
                 {customer.currentDebt > 0 && (
@@ -406,17 +406,17 @@ export default function CustomersPage() {
                       setPaymentAmount(''); // مسح المبلغ السابق
                       setShowPaymentModal(true);
                     }}
-                    className="flex-1 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition font-semibold text-sm flex items-center justify-center gap-1"
+                    className="flex-1 py-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition font-semibold text-xs flex items-center justify-center gap-1"
                   >
-                    <DollarSign className="w-4 h-4" />
+                    <DollarSign className="w-3 h-3" />
                     دفع
                   </button>
                 )}
                 <button
                   onClick={() => handleDelete(customer._id)}
-                  className="py-2 px-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
+                  className="py-1.5 px-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3 h-3" />
                 </button>
               </div>
             </div>

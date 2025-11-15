@@ -96,10 +96,10 @@ export default function InventoryPage() {
     const minStockLevel = item.minStockLevel || 0;
 
     if (item.status === 'low' || quantity <= minStockLevel) {
-      return <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">مخزون منخفض</span>;
+      return <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold">مخزون منخفض</span>;
     }
 
-    return <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">جيد</span>;
+    return <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-semibold">جيد</span>;
   };
 
   const filteredInventory = inventory.filter((item) => {
@@ -129,17 +129,17 @@ export default function InventoryPage() {
   });
 
   const StatCard = ({ icon: Icon, label, value, color, sublabel }) => (
-    <div className={`bg-white rounded-lg shadow-lg p-4 border-r-4 ${color}`}>
-      <div className="flex items-center justify-between mb-3">
-        <div className={`p-3 rounded-lg ${color.replace('border', 'bg').replace('600', '100')}`}>
-          <Icon className={`w-5 h-5 ${color.replace('border', 'text')}`} />
+    <div className={`bg-white rounded-lg shadow-lg p-3 border-r-4 ${color}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className={`p-2 rounded-lg ${color.replace('border', 'bg').replace('600', '100')}`}>
+          <Icon className={`w-4 h-4 ${color.replace('border', 'text')}`} />
         </div>
         <div className="text-right">
-          <div className="text-2xl font-bold text-gray-800">{value}</div>
+          <div className="text-xl font-bold text-gray-800">{value}</div>
           {sublabel && <div className="text-xs text-gray-500 mt-1">{sublabel}</div>}
         </div>
       </div>
-      <div className="text-gray-600 font-semibold">{label}</div>
+      <div className="text-gray-600 font-semibold text-sm">{label}</div>
     </div>
   );
 
@@ -173,7 +173,7 @@ export default function InventoryPage() {
 
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
           <StatCard
             icon={Package}
             label="إجمالي المنتجات"
@@ -237,7 +237,7 @@ export default function InventoryPage() {
         </div>
 
         {/* Inventory Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
           {filteredInventory.map((item) => {
             const daysUntilExpiry = getDaysUntilExpiry(item.expiryDate);
             const itemValue = (item.quantity || 0) * (item.product?.purchasePrice || 0);
@@ -251,46 +251,46 @@ export default function InventoryPage() {
             const formattedQuantity = Number(quantity).toLocaleString();
 
             return (
-              <div key={item._id} className="bg-white rounded-xl shadow-lg p-4 hover:shadow-xl transition-shadow duration-300 border border-gray-100">
-                <div className="flex items-start justify-between mb-4">
+              <div key={item._id} className="bg-white rounded-xl shadow-lg p-3 hover:shadow-xl transition-shadow duration-300 border border-gray-100">
+                <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-800 mb-1">{productName}</h3>
-                    <p className="text-sm text-gray-500 mb-2">{productCategory} • {productUnit}</p>
+                    <h3 className="text-base font-bold text-gray-800 mb-1">{productName}</h3>
+                    <p className="text-xs text-gray-500 mb-2">{productCategory} • {productUnit}</p>
                   </div>
                   <div className="ml-2">
                     {getStatusBadge(item)}
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">الكمية:</span>
-                    <span className={`font-bold text-lg ${quantity <= minStockLevel ? 'text-red-600' : 'text-gray-800'}`}>
+                    <span className="text-xs text-gray-600">الكمية:</span>
+                    <span className={`font-bold text-base ${quantity <= minStockLevel ? 'text-red-600' : 'text-gray-800'}`}>
                       {formattedQuantity}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">الحد الأدنى:</span>
-                    <span className="font-semibold text-gray-700">{minStockLevel}</span>
+                    <span className="text-xs text-gray-600">الحد الأدنى:</span>
+                    <span className="font-semibold text-gray-700 text-sm">{minStockLevel}</span>
                   </div>
 
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">القيمة:</span>
-                    <span className="font-bold text-green-600">{itemValue.toLocaleString()} جنيه</span>
+                    <span className="text-xs text-gray-600">القيمة:</span>
+                    <span className="font-bold text-green-600 text-sm">{itemValue.toLocaleString()} جنيه</span>
                   </div>
 
                   {batchNumbers !== '-' && (
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">رقم الدفعة:</span>
-                      <span className="font-mono text-sm text-gray-700">{batchNumbers}</span>
+                      <span className="text-xs text-gray-600">رقم الدفعة:</span>
+                      <span className="font-mono text-xs text-gray-700">{batchNumbers}</span>
                     </div>
                   )}
 
                   {locations !== '-' && (
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">الموقع:</span>
-                      <span className="text-sm text-gray-700">{locations}</span>
+                      <span className="text-xs text-gray-600">الموقع:</span>
+                      <span className="text-xs text-gray-700">{locations}</span>
                     </div>
                   )}
                 </div>

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Edit, Trash2, ShoppingBag, Truck, Calendar, DollarSign } from 'lucide-react';
+import { Plus, Edit, Trash2, ShoppingBag, Truck, Calendar, DollarSign, Package, FileText, X } from 'lucide-react';
 
 export default function PurchasesPage() {
   const [purchases, setPurchases] = useState([]);
@@ -16,7 +16,7 @@ export default function PurchasesPage() {
     supplier: '',
     purchaseDate: new Date().toISOString().split('T')[0],
     paymentStatus: 'unpaid',
-    items: [{ product: '', quantity: '', unitPrice: '', total: '' }],
+    items: [{ product: '', productName: '', quantity: '', unitPrice: '', total: '' }],
     tax: 0,
     subtotal: 0,
     total: 0,
@@ -81,7 +81,7 @@ export default function PurchasesPage() {
     }));
 
     // حساب الإجماليات
-    const { subtotal, total } = calculateTotals(items, parseFloat(formData.tax || 0));
+    const { subtotal, total } = calculateTotals(items, 0);
 
     const url = editingPurchase ? `/api/purchases/${editingPurchase._id}` : '/api/purchases';
     const method = editingPurchase ? 'PUT' : 'POST';
@@ -96,7 +96,7 @@ export default function PurchasesPage() {
           items,
           subtotal,
           total,
-          tax: parseFloat(formData.tax || 0)
+          tax: 0
         })
       });
       
@@ -123,7 +123,10 @@ export default function PurchasesPage() {
       supplier: purchase.supplier?._id || '',
       purchaseDate: new Date(purchase.purchaseDate).toISOString().split('T')[0],
       paymentStatus: purchase.paymentStatus,
-      items: purchase.items || [],
+      items: (purchase.items || []).map(item => ({
+        ...item,
+        productName: item.product?.name || ''
+      })),
       tax: purchase.tax || 0,
       subtotal: purchase.subtotal || 0,
       total: purchase.total || 0,
@@ -154,7 +157,7 @@ export default function PurchasesPage() {
       supplier: '',
       purchaseDate: new Date().toISOString().split('T')[0],
       paymentStatus: 'unpaid',
-      items: [{ product: '', quantity: '', unitPrice: '', total: '' }],
+      items: [{ product: '', productName: '', quantity: '', unitPrice: '', total: '' }],
       tax: 0,
       subtotal: 0,
       total: 0,
@@ -328,215 +331,223 @@ export default function PurchasesPage() {
         {/* Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-8 max-w-2xl w-full max-h-screen overflow-y-auto">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">
-                {editingPurchase ? 'تعديل المشتريات' : 'إضافة مشتريات جديدة'}
-              </h2>
+            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-screen overflow-y-auto">
+              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 rounded-t-xl">
+                <h2 className="text-2xl font-bold">
+                  {editingPurchase ? 'تعديل المشتريات' : 'إضافة مشتريات جديدة'}
+                </h2>
+                <p className="text-indigo-100 mt-1">
+                  {editingPurchase ? 'قم بتعديل بيانات المشتريات' : 'أدخل بيانات المشتريات الجديدة'}
+                </p>
+              </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">رقم الفاتورة</label>
-                    <input
-                      type="text"
-                      value={formData.invoiceNumber}
-                      onChange={(e) => setFormData({ ...formData, invoiceNumber: e.target.value })}
-                      placeholder="سيتم توليده تلقائياً"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                    />
-                  </div>
+              <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                {/* Basic Information */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <ShoppingBag className="w-5 h-5 text-indigo-600" />
+                    معلومات أساسية
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">رقم الفاتورة</label>
+                      <input
+                        type="text"
+                        value={formData.invoiceNumber}
+                        onChange={(e) => setFormData({ ...formData, invoiceNumber: e.target.value })}
+                        placeholder="سيتم توليده تلقائياً"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">المورد *</label>
-                    <select
-                      required
-                      value={formData.supplier}
-                      onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                    >
-                      <option value="">اختر مورد</option>
-                      {suppliers.map(supplier => (
-                        <option key={supplier._id} value={supplier._id}>
-                          {supplier.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">المورد <span className="text-red-500">*</span></label>
+                      <select
+                        required
+                        value={formData.supplier}
+                        onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                      >
+                        <option value="">اختر مورد</option>
+                        {suppliers.map(supplier => (
+                          <option key={supplier._id} value={supplier._id}>
+                            {supplier.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">التاريخ *</label>
-                    <input
-                      type="date"
-                      required
-                      value={formData.purchaseDate}
-                      onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">تاريخ الشراء <span className="text-red-500">*</span></label>
+                      <input
+                        type="date"
+                        required
+                        value={formData.purchaseDate}
+                        onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">حالة الدفع</label>
-                    <select
-                      value={formData.paymentStatus}
-                      onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                    >
-                      <option value="unpaid">لم تدفع</option>
-                      <option value="partial">جزئية</option>
-                      <option value="paid">مدفوعة</option>
-                    </select>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">حالة الدفع</label>
+                      <select
+                        value={formData.paymentStatus}
+                        onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                      >
+                        <option value="unpaid">لم تدفع</option>
+                        <option value="partial">جزئية</option>
+                        <option value="paid">مدفوعة</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
                 {/* Items */}
-                <div className="space-y-4 mt-6">
-                  <h3 className="text-lg font-bold text-gray-800">المنتجات</h3>
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                      <Package className="w-5 h-5 text-indigo-600" />
+                      المنتجات
+                    </h3>
+                    <span className="text-sm text-gray-500">{formData.items.length} منتج</span>
+                  </div>
 
-                  {formData.items.map((item, index) => (
-                    <div key={index} className="grid grid-cols-4 gap-2 p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <label className="text-xs text-gray-600">المنتج *</label>
-                        <select
-                          required
-                          value={item.product}
-                          onChange={(e) => {
-                            const newItems = [...formData.items];
-                            newItems[index].product = e.target.value;
-                            setFormData({ ...formData, items: newItems });
-                          }}
-                          className="w-full px-2 py-2 border border-gray-300 rounded text-sm"
-                        >
-                          <option value="">اختر</option>
-                          {products.map(p => (
-                            <option key={p._id} value={p._id}>{p.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-600">الكمية *</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          required
-                          value={item.quantity}
-                          onChange={(e) => {
-                            const newItems = [...formData.items];
-                            newItems[index].quantity = e.target.value;
-                            setFormData({ ...formData, items: newItems });
-                          }}
-                          className="w-full px-2 py-2 border border-gray-300 rounded text-sm"
-                          placeholder="0"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-600">السعر *</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          required
-                          value={item.unitPrice}
-                          onChange={(e) => {
-                            const newItems = [...formData.items];
-                            newItems[index].unitPrice = e.target.value;
-                            setFormData({ ...formData, items: newItems });
-                          }}
-                          className="w-full px-2 py-2 border border-gray-300 rounded text-sm"
-                          placeholder="0"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-600">الإجمالي</label>
-                        <div className="w-full px-2 py-2 border border-gray-300 rounded text-sm bg-gray-100 flex items-center">
-                          {(parseFloat(item.quantity || 0) * parseFloat(item.unitPrice || 0)).toFixed(2)}
+                  <div className="space-y-3">
+                    {formData.items.map((item, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-sm font-medium text-gray-700">المنتج {index + 1}</span>
+                          {formData.items.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newItems = formData.items.filter((_, i) => i !== index);
+                                setFormData({ ...formData, items: newItems });
+                              }}
+                              className="text-red-500 hover:text-red-700 p-1"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">المنتج <span className="text-red-500">*</span></label>
+                            <input
+                              type="text"
+                              required
+                              value={item.productName || ''}
+                              onChange={(e) => {
+                                const newItems = [...formData.items];
+                                newItems[index].productName = e.target.value;
+                                // Find matching product by name
+                                const matchingProduct = products.find(p => p.name.toLowerCase() === e.target.value.toLowerCase());
+                                if (matchingProduct) {
+                                  newItems[index].product = matchingProduct._id;
+                                } else {
+                                  newItems[index].product = '';
+                                }
+                                setFormData({ ...formData, items: newItems });
+                              }}
+                              list={`products-list-${index}`}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-sm"
+                              placeholder="اكتب اسم المنتج"
+                            />
+                            <datalist id={`products-list-${index}`}>
+                              {products.map(p => (
+                                <option key={p._id} value={p.name} />
+                              ))}
+                            </datalist>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">الكمية <span className="text-red-500">*</span></label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              required
+                              value={item.quantity}
+                              onChange={(e) => {
+                                const newItems = [...formData.items];
+                                newItems[index].quantity = e.target.value;
+                                setFormData({ ...formData, items: newItems });
+                              }}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-sm"
+                              placeholder="0"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">سعر الوحدة <span className="text-red-500">*</span></label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              required
+                              value={item.unitPrice}
+                              onChange={(e) => {
+                                const newItems = [...formData.items];
+                                newItems[index].unitPrice = e.target.value;
+                                setFormData({ ...formData, items: newItems });
+                              }}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-sm"
+                              placeholder="0"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">الإجمالي</label>
+                            <div className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm font-semibold text-green-600 flex items-center">
+                              {(parseFloat(item.quantity || 0) * parseFloat(item.unitPrice || 0)).toFixed(2)} جنيه
+                            </div>
+                          </div>
+
+
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">رقم الدفعة</label>
+                            <input
+                              type="text"
+                              value={item.batchNumber || ''}
+                              onChange={(e) => {
+                                const newItems = [...formData.items];
+                                newItems[index].batchNumber = e.target.value;
+                                setFormData({ ...formData, items: newItems });
+                              }}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-sm"
+                              placeholder="اختياري"
+                            />
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <label className="text-xs text-gray-600">تاريخ الانتهاء</label>
-                        <input
-                          type="date"
-                          value={item.expiryDate ? new Date(item.expiryDate).toISOString().split('T')[0] : ''}
-                          onChange={(e) => {
-                            const newItems = [...formData.items];
-                            newItems[index].expiryDate = e.target.value;
-                            setFormData({ ...formData, items: newItems });
-                          }}
-                          className="w-full px-2 py-2 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-600">رقم الدفعة</label>
-                        <input
-                          type="text"
-                          value={item.batchNumber || ''}
-                          onChange={(e) => {
-                            const newItems = [...formData.items];
-                            newItems[index].batchNumber = e.target.value;
-                            setFormData({ ...formData, items: newItems });
-                          }}
-                          className="w-full px-2 py-2 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
 
                   <button
                     type="button"
                     onClick={() => {
                       setFormData({
                         ...formData,
-                        items: [...formData.items, { product: '', quantity: '', unitPrice: '', total: '' }]
+                        items: [...formData.items, { product: '', productName: '', quantity: '', unitPrice: '', total: '' }]
                       });
                     }}
-                    className="w-full py-2 border border-dashed border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition"
+                    className="w-full mt-4 py-3 border-2 border-dashed border-indigo-300 rounded-lg text-indigo-600 hover:bg-indigo-50 transition flex items-center justify-center gap-2 font-medium"
                   >
-                    + إضافة منتج
+                    <Plus className="w-5 h-5" />
+                    إضافة منتج آخر
                   </button>
                 </div>
 
-                {/* Totals */}
-                <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg mt-6">
-                  <div>
-                    <label className="text-sm text-gray-600">الضريبة</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={formData.tax}
-                      onChange={(e) => setFormData({ ...formData, tax: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 mt-1"
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-600">المجموع الفرعي</label>
-                    <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white mt-1 font-semibold">
-                      {calculateTotals(formData.items, parseFloat(formData.tax || 0)).subtotal.toFixed(2)}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-600">المجموع النهائي</label>
-                    <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white mt-1 font-semibold text-lg text-green-600">
-                      {calculateTotals(formData.items, parseFloat(formData.tax || 0)).total.toFixed(2)}
-                    </div>
-                  </div>
-                </div>
 
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">ملاحظات</label>
-                  <textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                    rows="3"
-                    placeholder="ملاحظات إضافية..."
-                  ></textarea>
-                </div>
 
-                <div className="flex gap-3 mt-6">
+                {/* Actions */}
+                <div className="flex gap-4 pt-4 border-t border-gray-200">
                   <button
                     type="submit"
-                    className="flex-1 bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition font-semibold"
+                    className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-6 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition font-semibold flex items-center justify-center gap-2 shadow-lg"
                   >
-                    {editingPurchase ? 'تحديث' : 'إضافة'}
+                    <Plus className="w-5 h-5" />
+                    {editingPurchase ? 'تحديث المشتريات' : 'إضافة المشتريات'}
                   </button>
                   <button
                     type="button"
@@ -544,8 +555,9 @@ export default function PurchasesPage() {
                       setShowModal(false);
                       resetForm();
                     }}
-                    className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 transition font-semibold"
+                    className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-semibold flex items-center justify-center gap-2"
                   >
+                    <X className="w-5 h-5" />
                     إلغاء
                   </button>
                 </div>

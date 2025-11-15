@@ -89,24 +89,24 @@ export default function PaymentsPage() {
   };
 
   const StatCard = ({ icon: Icon, label, value, color, trend, sublabel }) => (
-    <div className={`bg-white rounded-lg shadow-lg p-4 border-r-4 ${color}`}>
+    <div className={`bg-white rounded-lg shadow-lg p-3 border-r-4 ${color}`}>
       <div className="flex items-center justify-between mb-2">
-        <div className={`p-2 rounded-lg ${color.replace('border', 'bg').replace('600', '100')}`}>
-          <Icon className={`w-5 h-5 ${color.replace('border', 'text')}`} />
+        <div className={`p-1 rounded-lg ${color.replace('border', 'bg').replace('600', '100')}`}>
+          <Icon className={`w-4 h-4 ${color.replace('border', 'text')}`} />
         </div>
         {trend && (
-          <div className={`flex items-center gap-1 text-sm font-semibold ${
+          <div className={`flex items-center gap-1 text-xs font-semibold ${
             trend > 0 ? 'text-green-600' : 'text-red-600'
           }`}>
-            {trend > 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+            {trend > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
             {Math.abs(trend)}%
           </div>
         )}
       </div>
-      <div className="text-xl font-bold text-gray-800 mb-1">
+      <div className="text-lg font-bold text-gray-800 mb-1">
         {value.toLocaleString()} جنيه
       </div>
-      <div className="text-gray-600 font-semibold text-sm">{label}</div>
+      <div className="text-gray-600 font-semibold text-xs">{label}</div>
       {sublabel && <div className="text-xs text-gray-500 mt-1">{sublabel}</div>}
     </div>
   );
@@ -143,7 +143,7 @@ export default function PaymentsPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           <StatCard
             icon={TrendingUp}
             label="إجمالي المقبوضات"

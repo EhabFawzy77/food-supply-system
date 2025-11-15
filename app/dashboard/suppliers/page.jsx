@@ -179,29 +179,29 @@ export default function SuppliersPage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-3 rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-2 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <Truck className="w-8 h-8 opacity-80" />
-                <span className="text-3xl font-bold">{suppliers.length}</span>
+                <Truck className="w-6 h-6 opacity-80" />
+                <span className="text-2xl font-bold">{suppliers.length}</span>
               </div>
-              <div className="text-sm font-semibold">إجمالي الموردين</div>
+              <div className="text-xs font-semibold">إجمالي الموردين</div>
             </div>
 
-            <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-3 rounded-lg">
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-2 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <AlertCircle className="w-8 h-8 opacity-80" />
-                <span className="text-3xl font-bold">{suppliersWithDebt}</span>
+                <AlertCircle className="w-6 h-6 opacity-80" />
+                <span className="text-2xl font-bold">{suppliersWithDebt}</span>
               </div>
-              <div className="text-sm font-semibold">موردين لديهم مستحقات</div>
+              <div className="text-xs font-semibold">موردين لديهم مستحقات</div>
             </div>
 
-            <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-3 rounded-lg">
+            <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-2 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <DollarSign className="w-8 h-8 opacity-80" />
-                <span className="text-2xl font-bold">{totalDebt.toLocaleString()}</span>
+                <DollarSign className="w-6 h-6 opacity-80" />
+                <span className="text-xl font-bold">{totalDebt.toLocaleString()}</span>
               </div>
-              <div className="text-sm font-semibold">إجمالي المستحقات (جنيه)</div>
+              <div className="text-xs font-semibold">إجمالي المستحقات (جنيه)</div>
             </div>
           </div>
         </div>
@@ -221,44 +221,44 @@ export default function SuppliersPage() {
         </div>
 
         {/* Suppliers Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredSuppliers.map((supplier) => (
-            <div key={supplier._id} className="bg-white rounded-lg shadow-lg p-4 hover:shadow-xl transition">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                    <Truck className="w-6 h-6 text-purple-600" />
+            <div key={supplier._id} className="bg-white rounded-lg shadow-lg p-3 hover:shadow-xl transition">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                    <Truck className="w-5 h-5 text-purple-600" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-800">{supplier.name}</h3>
+                    <h3 className="font-bold text-gray-800 text-sm">{supplier.name}</h3>
                     <p className="text-xs text-gray-500">مورد</p>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-2 text-sm mb-4">
+              <div className="space-y-1 text-xs mb-3">
                 <div className="flex items-center gap-2 text-gray-600">
-                  <Phone className="w-4 h-4" />
+                  <Phone className="w-3 h-3" />
                   <span>{supplier.phone}</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-600">
-                  <Mail className="w-4 h-4" />
+                  <Mail className="w-3 h-3" />
                   <span className="text-xs">{supplier.email}</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-600">
-                  <MapPin className="w-4 h-4" />
+                  <MapPin className="w-3 h-3" />
                   <span className="text-xs">{supplier.address}</span>
                 </div>
               </div>
 
-              <div className="space-y-2 mb-4 pt-4 border-t">
-                <div className="flex justify-between text-sm">
+              <div className="space-y-1 mb-3 pt-3 border-t">
+                <div className="flex justify-between text-xs">
                   <span className="text-gray-600">إجمالي المشتريات:</span>
                   <span className="font-semibold text-green-600">
                     {supplier.totalPurchases ? supplier.totalPurchases.toLocaleString() : '0'} جنيه
                   </span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-xs">
                   <span className="text-gray-600">المستحقات:</span>
                   <span className={`font-semibold ${
                     supplier.currentDebt > 0 ? 'text-red-600' : 'text-green-600'
@@ -266,7 +266,7 @@ export default function SuppliersPage() {
                     {supplier.currentDebt.toLocaleString()} جنيه
                   </span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-xs">
                   <span className="text-gray-600">آخر مشتريات:</span>
                   <span className="font-semibold text-gray-700">
                     {new Date(supplier.lastPurchase).toLocaleDateString('ar-EG')}
@@ -274,12 +274,12 @@ export default function SuppliersPage() {
                 </div>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-1">
                 <button
                   onClick={() => handleEdit(supplier)}
-                  className="flex-1 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition font-semibold text-sm flex items-center justify-center gap-1"
+                  className="flex-1 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition font-semibold text-xs flex items-center justify-center gap-1"
                 >
-                  <Edit className="w-4 h-4" />
+                  <Edit className="w-3 h-3" />
                   تعديل
                 </button>
                 {supplier.currentDebt > 0 && (
@@ -288,17 +288,17 @@ export default function SuppliersPage() {
                       setSelectedSupplier(supplier);
                       setShowPaymentModal(true);
                     }}
-                    className="flex-1 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition font-semibold text-sm flex items-center justify-center gap-1"
+                    className="flex-1 py-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition font-semibold text-xs flex items-center justify-center gap-1"
                   >
-                    <DollarSign className="w-4 h-4" />
+                    <DollarSign className="w-3 h-3" />
                     دفع
                   </button>
                 )}
                 <button
                   onClick={() => handleDelete(supplier._id)}
-                  className="py-2 px-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
+                  className="py-1.5 px-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3 h-3" />
                 </button>
               </div>
             </div>
