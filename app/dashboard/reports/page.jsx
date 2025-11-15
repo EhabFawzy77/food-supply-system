@@ -243,7 +243,7 @@ export default function ReportsPage() {
         </div>
 
         {/* Summary Card */}
-        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow-lg p-8 text-white">
+        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow-lg p-8 text-white mb-6">
           <h3 className="text-2xl font-bold mb-6">ملخص الأداء</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
@@ -264,26 +264,26 @@ export default function ReportsPage() {
             </div>
           </div>
         </div>
-      {/* تقرير الفواتير الآجلة والمديونية */}
-      <div className="bg-white rounded-lg shadow-lg p-6 mt-8">
-        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <FileText className="w-6 h-6 text-orange-600" />
-          تقرير الفواتير الآجلة والمديونية للعملاء
-        </h3>
-        <CreditReportTable />
+
+        {/* تقرير الفواتير الآجلة والمديونية */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <FileText className="w-6 h-6 text-orange-600" />
+            تقرير الفواتير الآجلة والمديونية للعملاء
+          </h3>
+          <CreditReportTable />
+        </div>
       </div>
     </div>
   );
 }
 
 // مكون لجلب وعرض تقرير الفواتير الآجلة والمديونية لكل عميل
-import { useEffect as useEffectCredit, useState as useStateCredit } from 'react';
-
 function CreditReportTable() {
-  const [rows, setRows] = useStateCredit([]);
-  const [loading, setLoading] = useStateCredit(true);
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffectCredit(() => {
+  useEffect(() => {
     const fetchCreditReport = async () => {
       setLoading(true);
       try {

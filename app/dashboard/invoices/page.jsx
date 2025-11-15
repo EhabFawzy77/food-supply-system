@@ -20,6 +20,7 @@ export default function InvoicesPage() {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
+    // Check authentication
     const token = localStorage.getItem('authToken');
     if (!token) {
       router.push('/login');
@@ -27,47 +28,88 @@ export default function InvoicesPage() {
     }
 
     fetchData();
-  }, [currentPage, filterStatus, searchTerm]);
+  }, [currentPage, filterStatus, searchTerm, router]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Fetching invoices data...');
+
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        console.error('❌ No auth token found');
+        router.push('/login');
+        return;
+      }
 
       // Fetch invoices
       const params = new URLSearchParams({
-        page: currentPage,
-        limit: 10,
+        page: currentPage.toString(),
+        limit: '10',
         ...(filterStatus !== 'all' && { paymentStatus: filterStatus }),
         ...(searchTerm && { search: searchTerm })
       });
 
+      console.log('📡 Request params:', params.toString());
+      console.log('🔑 Using token:', token.substring(0, 20) + '...');
+
       const invoicesRes = await fetch(`/api/invoices?${params}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
+      console.log('📥 Invoices response status:', invoicesRes.status);
+
+      if (invoicesRes.status === 401) {
+        console.error('❌ Unauthorized - redirecting to login');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('currentUser');
+        router.push('/login');
+        return;
+      }
+
       const invoicesData = await invoicesRes.json();
+      console.log('📦 Invoices data:', invoicesData);
 
       if (invoicesData.success) {
-        setInvoices(invoicesData.data);
-        setTotalPages(invoicesData.pagination.pages);
+        setInvoices(invoicesData.data || []);
+        if (invoicesData.pagination) {
+          setTotalPages(invoicesData.pagination.pages || 1);
+        }
+        console.log('✅ Loaded', (invoicesData.data || []).length, 'invoices');
+      } else {
+        console.error('❌ Invoice fetch failed:', invoicesData.error);
+        if (invoicesData.error === 'غير مصرح' || invoicesData.error === 'Unauthorized') {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('currentUser');
+          router.push('/login');
+          return;
+        }
+        setInvoices([]);
       }
 
       // Fetch stats
       const statsRes = await fetch('/api/invoices/stats?period=month', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
-      const statsData = await statsRes.json();
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        console.log('📊 Stats data:', statsData);
 
-      if (statsData.success) {
-        setStats(statsData.data);
+        if (statsData.success) {
+          setStats(statsData.data);
+        }
       }
     } catch (error) {
-      console.error('Error fetching invoices:', error);
+      console.error('💥 Error fetching invoices:', error);
+      setInvoices([]);
     } finally {
       setLoading(false);
     }
@@ -77,10 +119,12 @@ export default function InvoicesPage() {
     if (!window.confirm('هل تريد حذف هذه الفاتورة؟')) return;
 
     try {
+      const token = localStorage.getItem('authToken');
       const res = await fetch(`/api/invoices/${invoiceId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
@@ -88,12 +132,13 @@ export default function InvoicesPage() {
 
       if (data.success) {
         setInvoices(invoices.filter(inv => inv._id !== invoiceId));
+        alert('✅ تم حذف الفاتورة بنجاح');
       } else {
-        alert('حدث خطأ في حذف الفاتورة');
+        alert('❌ حدث خطأ في حذف الفاتورة');
       }
     } catch (error) {
       console.error('Error deleting invoice:', error);
-      alert('حدث خطأ في حذف الفاتورة');
+      alert('❌ حدث خطأ في حذف الفاتورة');
     }
   };
 
@@ -137,6 +182,23 @@ export default function InvoicesPage() {
     </div>
   );
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100" dir="rtl">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <div className="text-center">
+              <div className="inline-block animate-spin">
+                <FileText className="w-12 h-12 text-blue-600" />
+              </div>
+              <p className="mt-4 text-gray-600">جاري التحميل...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-100" dir="rtl">
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -144,7 +206,7 @@ export default function InvoicesPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-4xl font-bold text-gray-800">الفواتير</h1>
-            <Link href="/dashboard/invoices/create">
+            <Link href="/dashboard/sales/create">
               <button className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
                 <Plus className="w-5 h-5" />
                 فاتورة جديدة
@@ -158,25 +220,25 @@ export default function InvoicesPage() {
               <StatCard
                 icon={FileText}
                 label="إجمالي الفواتير"
-                value={stats.totalInvoices}
+                value={stats.totalInvoices || 0}
                 color="border-blue-600"
               />
               <StatCard
                 icon={TrendingUp}
                 label="إجمالي المبيعات"
-                value={formatPrice(stats.totalAmount)}
+                value={formatPrice(stats.totalAmount || 0)}
                 color="border-green-600"
               />
               <StatCard
                 icon={CheckCircle}
                 label="الفواتير المدفوعة"
-                value={stats.paidCount}
+                value={stats.paidCount || 0}
                 color="border-emerald-600"
               />
               <StatCard
                 icon={Clock}
                 label="في الانتظار"
-                value={stats.unpaidCount}
+                value={stats.unpaidCount || 0}
                 color="border-orange-600"
               />
             </div>
@@ -208,7 +270,7 @@ export default function InvoicesPage() {
                   setFilterStatus(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 appearance-none"
+                className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 appearance-none"
               >
                 <option value="all">جميع الحالات</option>
                 <option value="paid">مدفوع</option>
@@ -229,17 +291,21 @@ export default function InvoicesPage() {
 
         {/* Invoices Table */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          {loading ? (
-            <div className="p-8 text-center">
-              <div className="inline-block animate-spin">
-                <FileText className="w-12 h-12 text-blue-600" />
-              </div>
-              <p className="mt-4 text-gray-600">جاري التحميل...</p>
-            </div>
-          ) : invoices.length === 0 ? (
+          {invoices.length === 0 ? (
             <div className="p-8 text-center">
               <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">لا توجد فواتير</p>
+              <p className="text-gray-600 text-lg mb-2">لا توجد فواتير</p>
+              <p className="text-gray-500 text-sm">
+                {searchTerm || filterStatus !== 'all' 
+                  ? 'حاول تغيير معايير البحث أو الفلترة'
+                  : 'ابدأ بإنشاء فاتورة جديدة'
+                }
+              </p>
+              <Link href="/dashboard/sales/create">
+                <button className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                  إنشاء فاتورة
+                </button>
+              </Link>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -269,27 +335,11 @@ export default function InvoicesPage() {
                               <Eye className="w-5 h-5 text-blue-600" />
                             </button>
                           </Link>
-                          <button
-                            onClick={async () => {
-                              const { generateInvoiceHTML } = await import('../../../lib/utils/invoice/template');
-                              const html = generateInvoiceHTML(invoice, {
-                                name: 'شركة توريد الأغذية',
-                                phone: '+20 100 000 0000',
-                                email: 'info@foodsupply.com',
-                                address: 'القاهرة، مصر'
-                              });
-                              const printWindow = window.open('', '_blank');
-                              printWindow.document.write(html);
-                              printWindow.document.close();
-                              setTimeout(() => {
-                                printWindow.print();
-                              }, 250);
-                            }}
-                            className="p-2 hover:bg-green-100 rounded-lg transition"
-                            title="طباعة"
-                          >
-                            <Printer className="w-5 h-5 text-green-600" />
-                          </button>
+                          <Link href={`/dashboard/invoices/${invoice._id}/print`}>
+                            <button className="p-2 hover:bg-green-100 rounded-lg transition" title="طباعة">
+                              <Printer className="w-5 h-5 text-green-600" />
+                            </button>
+                          </Link>
                           <button
                             onClick={() => handleDelete(invoice._id)}
                             className="p-2 hover:bg-red-100 rounded-lg transition"
@@ -305,42 +355,42 @@ export default function InvoicesPage() {
               </table>
             </div>
           )}
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center gap-2 p-4 bg-gray-50 border-t">
-              <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-100 transition"
-              >
-                السابق
-              </button>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`px-4 py-2 border rounded-lg transition ${
-                    page === currentPage
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'border-gray-300 hover:bg-gray-100'
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-
-              <button
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-100 transition"
-              >
-                التالي
-              </button>
-            </div>
-          )}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && invoices.length > 0 && (
+          <div className="flex justify-center gap-2 mt-6">
+            <button
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-100 transition"
+            >
+              السابق
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`px-4 py-2 border rounded-lg transition ${
+                  page === currentPage
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'border-gray-300 hover:bg-gray-100'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            <button
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-100 transition"
+            >
+              التالي
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
