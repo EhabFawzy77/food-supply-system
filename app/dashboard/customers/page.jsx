@@ -1,9 +1,70 @@
-'use client';
-import { useState, useEffect } from 'react';
+"use client";
+import React, { useState, useEffect } from "react";
 import { 
   Users, Plus, Edit, Trash2, Phone, MapPin, CreditCard, 
   TrendingUp, AlertCircle, Search, X, DollarSign
 } from 'lucide-react';
+
+// مكون لجلب وعرض الفواتير الآجلة وجدول الدفعات للعميل
+function AsyncCustomerInvoices({ customerId }) {
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchInvoices = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/customers/${customerId}/debts`);
+        const data = await res.json();
+        if (data.success) {
+          setInvoices(data.data.invoices || []);
+        } else {
+          setInvoices([]);
+        }
+      } catch {
+        setInvoices([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInvoices();
+  }, [customerId]);
+
+  if (loading) return <div className="text-xs text-gray-500">جاري التحميل...</div>;
+  if (!invoices.length) return <div className="text-xs text-gray-500">لا توجد فواتير آجل مفتوحة</div>;
+
+  return (
+    <div className="space-y-2">
+      {invoices.slice(0, 3).map(inv => (
+        <div key={inv._id} className="flex flex-col gap-1 p-2 bg-white rounded border">
+          <div className="flex justify-between text-xs">
+            <span>فاتورة #{inv.invoiceNumber || inv._id}</span>
+            <span className="font-bold text-red-600">{((inv.total || 0) - (inv.paidAmount || 0)).toLocaleString()} جنيه متبقي</span>
+          </div>
+          {inv.dueDate && (
+            <div className="flex justify-between text-xs text-gray-600">
+              <span>تاريخ الاستحقاق:</span>
+              <span>{new Date(inv.dueDate).toLocaleDateString('ar-EG')}</span>
+            </div>
+          )}
+          {inv.paymentSchedule && inv.paymentSchedule.length > 0 && (
+            <div className="mt-1 text-xs">
+              <span className="font-bold text-gray-700">جدول الدفعات:</span>
+              <ul className="list-disc ml-4">
+                {inv.paymentSchedule.map((p, idx) => (
+                  <li key={idx} className={p.paid ? 'text-green-600' : 'text-orange-600'}>
+                    قسط {p.installmentNumber}: {p.amount.toLocaleString()} جنيه - {p.paid ? 'مدفوع' : 'مستحق'} {p.dueDate ? `(${new Date(p.dueDate).toLocaleDateString('ar-EG')})` : ''}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      ))}
+      {invoices.length > 3 && <div className="text-xs text-gray-500">عرض 3 من {invoices.length} فاتورة</div>}
+    </div>
+  );
+}
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState([]);
@@ -13,7 +74,7 @@ export default function CustomersPage() {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
-  
+
   const [formData, setFormData] = useState({
     name: '',
     businessName: '',
@@ -301,26 +362,33 @@ export default function CustomersPage() {
               </div>
 
               {(Number(customer.currentDebt) || 0) > 0 && (
-                <div className="mb-4">
-                  <div className="flex justify-between text-xs text-gray-600 mb-1">
-                    <span>الائتمان المستخدم</span>
-                    <span>{
-                      customer.creditLimit && Number(customer.creditLimit) > 0
-                        ? (((Number(customer.currentDebt) || 0) / Number(customer.creditLimit)) * 100).toFixed(0)
-                        : '0'
-                    }%</span>
+                <>
+                  <div className="mb-4">
+                    <div className="flex justify-between text-xs text-gray-600 mb-1">
+                      <span>الائتمان المستخدم</span>
+                      <span>{
+                        customer.creditLimit && Number(customer.creditLimit) > 0
+                          ? (((Number(customer.currentDebt) || 0) / Number(customer.creditLimit)) * 100).toFixed(0)
+                          : '0'
+                      }%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full ${
+                          ((Number(customer.currentDebt) || 0) / (Number(customer.creditLimit) || 1)) > 0.8 
+                            ? 'bg-red-500' 
+                            : 'bg-orange-500'
+                        }`}
+                        style={{ width: `${((Number(customer.currentDebt) || 0) / (Number(customer.creditLimit) || 1)) * 100}%` }}
+                      ></div>
+                    </div>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className={`h-2 rounded-full ${
-                        ((Number(customer.currentDebt) || 0) / (Number(customer.creditLimit) || 1)) > 0.8 
-                          ? 'bg-red-500' 
-                          : 'bg-orange-500'
-                      }`}
-                      style={{ width: `${((Number(customer.currentDebt) || 0) / (Number(customer.creditLimit) || 1)) * 100}%` }}
-                    ></div>
+                  {/* جدول الفواتير الآجلة والدفعات */}
+                  <div className="mb-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="font-bold text-sm text-orange-700 mb-2">فواتير آجل غير مسددة:</div>
+                    <AsyncCustomerInvoices customerId={customer._id} />
                   </div>
-                </div>
+                </>
               )}
 
               <div className="flex gap-2">
@@ -335,6 +403,7 @@ export default function CustomersPage() {
                   <button
                     onClick={() => {
                       setSelectedCustomer(customer);
+                      setPaymentAmount(''); // مسح المبلغ السابق
                       setShowPaymentModal(true);
                     }}
                     className="flex-1 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition font-semibold text-sm flex items-center justify-center gap-1"
@@ -483,11 +552,21 @@ export default function CustomersPage() {
                 <input
                   type="number"
                   value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
-                  max={selectedCustomer.currentDebt}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // السماح بأي رقم، التحقق سيتم في الزر
+                    setPaymentAmount(value);
+                  }}
+                  min="0"
+                  step="0.01"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                   placeholder="0"
                 />
+                {paymentAmount && parseFloat(paymentAmount) > selectedCustomer.currentDebt && (
+                  <p className="text-red-500 text-sm mt-1">
+                    المبلغ المدخل أكبر من الدين الحالي ({selectedCustomer.currentDebt} جنيه)
+                  </p>
+                )}
               </div>
 
               <div className="flex gap-3">

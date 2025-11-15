@@ -269,6 +269,7 @@ export default function PaymentsPage() {
                 <tr>
                   <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">النوع</th>
                   <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">المرجع</th>
+                  <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">رقم الفاتورة</th>
                   <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">من/إلى</th>
                   <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">المبلغ</th>
                   <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">طريقة الدفع</th>
@@ -295,6 +296,18 @@ export default function PaymentsPage() {
                       <div className="font-mono text-sm font-semibold text-indigo-600">
                         {payment.referenceNumber}
                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {payment.invoiceId ? (
+                        <a href={`/dashboard/invoices/${payment.invoiceId}`} className="text-blue-600 underline font-bold text-sm" target="_blank" rel="noopener noreferrer">
+                          {payment.invoiceNumber || payment.invoiceId}
+                        </a>
+                      ) : (
+                        <span className="text-gray-400 text-xs">—</span>
+                      )}
+                      {payment.paymentMethod === 'credit' && (
+                        <div className="text-xs text-orange-600 mt-1">دفعة آجل مرتبطة بفاتورة</div>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-semibold text-gray-800">

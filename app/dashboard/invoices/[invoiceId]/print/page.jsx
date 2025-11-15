@@ -138,6 +138,12 @@ export default function InvoicePrintPage() {
       // open print window
       const printWindow = window.open('', '_blank');
 
+      if (!printWindow) {
+        alert('يرجى السماح بفتح النوافذ المنبثقة لطباعة الفاتورة');
+        setPrinting(false);
+        return;
+      }
+
       // copy existing page styles (link and style tags) so Tailwind / global CSS is available
       const headNodes = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'));
       const headHtml = headNodes.map(n => n.outerHTML).join('\n');

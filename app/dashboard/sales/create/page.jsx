@@ -596,20 +596,23 @@ export default function SalesPage() {
                     <Banknote className="w-5 h-5 mx-auto mb-1" />
                     كاش
                   </button>
-                  <button
-                    onClick={() => {
-                      setPaymentMethod('credit');
-                      setPaidAmount('');
-                    }}
-                    className={`p-3 rounded-lg border-2 transition font-semibold text-sm ${
-                      paymentMethod === 'credit'
-                        ? 'border-orange-500 bg-orange-50 text-orange-700'
-                        : 'border-gray-300 text-gray-700 hover:border-orange-400'
-                    }`}
-                  >
-                    <CreditCard className="w-5 h-5 mx-auto mb-1" />
-                    آجل
-                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => {
+                        setPaymentMethod('credit');
+                        setPaidAmount('');
+                      }}
+                      className={`p-3 rounded-lg border-2 transition font-semibold text-sm w-full ${
+                        paymentMethod === 'credit'
+                          ? 'border-orange-500 bg-orange-50 text-orange-700'
+                          : 'border-gray-300 text-gray-700 hover:border-orange-400'
+                      }`}
+                    >
+                      <CreditCard className="w-5 h-5 mx-auto mb-1" />
+                      آجل
+                    </button>
+                    <span className="absolute left-0 top-full mt-1 text-xs text-orange-600 bg-orange-50 rounded px-2 py-1 shadow border border-orange-200">سيتم تسجيل الفاتورة كدين للعميل ويمكن تحصيل دفعات لاحقًا</span>
+                  </div>
                 </div>
 
                 {/* Total Amount Section */}
@@ -658,22 +661,17 @@ export default function SalesPage() {
                   </div>
                 )}
 
-                {/* Cash Display - shows total that must be paid */}
+                {/* Cash Info - shows that full payment is required */}
                 {paymentMethod === 'cash' && (
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                      المبلغ المدفوع (كاش - يجب دفع المبلغ كاملاً)
-                    </label>
-                    <input
-                      type="number"
-                      value={calculateTotal()}
-                      disabled
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 bg-gray-100 rounded-lg font-bold text-lg text-gray-700 cursor-not-allowed"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      الكاش يجب أن يدفع الفاتورة الحالية كاملة
-                      {selectedCustomer && (selectedCustomer.currentDebt || 0) > 0 && 
-                        ` + الديون السابقة (${(selectedCustomer.currentDebt || 0).toLocaleString()} جنيه)`}
+                  <div className="p-4 bg-green-50 rounded-lg border-2 border-green-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Banknote className="w-5 h-5 text-green-600" />
+                      <span className="font-bold text-green-800">دفع كاش - يجب دفع المبلغ كاملاً</span>
+                    </div>
+                    <p className="text-sm text-green-700">
+                      المبلغ المطلوب: <span className="font-bold text-lg">{calculateTotal().toLocaleString()} جنيه</span>
+                      {selectedCustomer && (selectedCustomer.currentDebt || 0) > 0 &&
+                        ` (يشمل الديون السابقة: ${(selectedCustomer.currentDebt || 0).toLocaleString()} جنيه)`}
                     </p>
                   </div>
                 )}
@@ -768,7 +766,7 @@ export default function SalesPage() {
                       {paymentMethod === 'credit' && (
                         <div className="col-span-2">
                           <div className="mt-2 p-3 rounded-lg bg-yellow-50 border border-yellow-200">
-                            <div className="text-xs text-gray-600">سيتم تسجيل كدين بعد هذه العملية:</div>
+                            <div className="text-xs text-gray-600">سيتم تسجيل الفاتورة كدين للعميل ويمكن تحصيل دفعات لاحقًا من صفحة الدفعات أو العميل.</div>
                             <div className="font-bold text-lg text-yellow-700">{calculateRemainingDebt().toLocaleString()} جنيه</div>
                           </div>
                         </div>

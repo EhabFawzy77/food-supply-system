@@ -85,22 +85,32 @@ export async function POST(request) {
       if (body.type === 'sale') {
         // تحديث حالة فاتورة البيع
         const sale = await Sale.findById(body.referenceId);
-        
+
         if (sale) {
           const newPaidAmount = sale.paidAmount + body.amount;
           let newStatus = 'unpaid';
-          
+
           if (newPaidAmount >= sale.total) {
             newStatus = 'paid';
           } else if (newPaidAmount > 0) {
             newStatus = 'partial';
           }
-          
+
           await Sale.findByIdAndUpdate(body.referenceId, {
             paidAmount: newPaidAmount,
             paymentStatus: newStatus
           });
-          
+
+          // تحديث الفاتورة المرتبطة بالبيع
+          const Invoice = (await import('../../../lib/models/Invoice.js')).default;
+          await Invoice.findOneAndUpdate(
+            { sale: body.referenceId },
+            {
+              paidAmount: newPaidAmount,
+              paymentStatus: newStatus
+            }
+          );
+
           // تحديث ديون العميل
           if (sale.customer) {
             await Customer.findByIdAndUpdate(sale.customer, {
@@ -142,9 +152,31 @@ export async function POST(request) {
     if (!body.referenceId) {
       if (body.type === 'sale' && body.customerId) {
         try {
+          // إنشاء سجل مبيع للدفعة على الدين
+          const debtPaymentSale = await Sale.create({
+            invoiceNumber: `DEBT-${referenceNumber}`,
+            customer: body.customerId,
+            items: [{
+              product: null,
+              productName: 'دفعة على دين',
+              quantity: 1,
+              unitPrice: body.amount,
+              total: body.amount
+            }],
+            subtotal: body.amount,
+            tax: 0,
+            discount: 0,
+            total: body.amount,
+            paymentStatus: 'paid',
+            paymentMethod: body.paymentMethod,
+            paidAmount: body.amount,
+            notes: `دفعة على دين سابق - ${body.notes || ''}`,
+            createdBy: body.createdBy
+          });
+
           await Customer.findByIdAndUpdate(body.customerId, { $inc: { currentDebt: -body.amount } });
         } catch (err) {
-          console.warn('Failed to update customer debt after payment:', err.message);
+          console.warn('Failed to create debt payment sale:', err.message);
         }
       }
 

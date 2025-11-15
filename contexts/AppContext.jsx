@@ -17,7 +17,6 @@ export function AppProvider({ children }) {
       try {
         const token = localStorage.getItem('authToken');
         const userData = localStorage.getItem('currentUser');
-        
         if (token && userData) {
           setUser(JSON.parse(userData));
         }
@@ -27,8 +26,44 @@ export function AppProvider({ children }) {
         setLoading(false);
       }
     };
-
     loadUser();
+
+    // تنبيهات الاستحقاق والمديونية
+    const checkCreditAlerts = async () => {
+      try {
+        const res = await fetch('/api/invoices?status=credit');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+          const today = new Date();
+          data.data.forEach(inv => {
+            if (!inv.dueDate || inv.paymentStatus === 'paid') return;
+            const due = new Date(inv.dueDate);
+            const daysLeft = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
+            const unpaid = (inv.total || 0) - (inv.paidAmount || 0);
+            if (unpaid <= 0) return;
+            if (daysLeft <= 3 && daysLeft >= 0) {
+              addNotification({
+                type: 'warning',
+                title: 'تنبيه استحقاق أجل',
+                message: `فاتورة آجل رقم ${inv.invoiceNumber || inv._id} للعميل ${inv.customerName || ''} تستحق خلال ${daysLeft} يوم. المبلغ المتبقي: ${unpaid.toLocaleString()} جنيه`,
+                duration: 8000
+              });
+            }
+            if (daysLeft < 0) {
+              addNotification({
+                type: 'error',
+                title: 'فاتورة آجل متأخرة',
+                message: `فاتورة آجل رقم ${inv.invoiceNumber || inv._id} للعميل ${inv.customerName || ''} متأخرة ${Math.abs(daysLeft)} يوم. المبلغ المتبقي: ${unpaid.toLocaleString()} جنيه`,
+                duration: 10000
+              });
+            }
+          });
+        }
+      } catch (err) {
+        // تجاهل الخطأ
+      }
+    };
+    checkCreditAlerts();
   }, []);
 
   const login = async (username, password) => {

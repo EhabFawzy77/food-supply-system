@@ -32,7 +32,7 @@ export async function GET(req, { params }) {
       success: true,
       data: {
         invoices,
-        outstandingFromInvoices,
+        total: outstandingFromInvoices,
         currentDebt: customer?.currentDebt || 0
       }
     });

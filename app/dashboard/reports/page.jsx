@@ -264,7 +264,70 @@ export default function ReportsPage() {
             </div>
           </div>
         </div>
+      {/* تقرير الفواتير الآجلة والمديونية */}
+      <div className="bg-white rounded-lg shadow-lg p-6 mt-8">
+        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <FileText className="w-6 h-6 text-orange-600" />
+          تقرير الفواتير الآجلة والمديونية للعملاء
+        </h3>
+        <CreditReportTable />
       </div>
+    </div>
+  );
+}
+
+// مكون لجلب وعرض تقرير الفواتير الآجلة والمديونية لكل عميل
+import { useEffect as useEffectCredit, useState as useStateCredit } from 'react';
+
+function CreditReportTable() {
+  const [rows, setRows] = useStateCredit([]);
+  const [loading, setLoading] = useStateCredit(true);
+
+  useEffectCredit(() => {
+    const fetchCreditReport = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch('/api/customers?withDebts=true');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+          setRows(data.data);
+        } else {
+          setRows([]);
+        }
+      } catch {
+        setRows([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCreditReport();
+  }, []);
+
+  if (loading) return <div className="text-xs text-gray-500">جاري التحميل...</div>;
+  if (!rows.length) return <div className="text-xs text-gray-500">لا يوجد عملاء عليهم ديون آجل حالياً</div>;
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="px-4 py-2 text-right font-bold text-gray-700">العميل</th>
+            <th className="px-4 py-2 text-right font-bold text-gray-700">عدد الفواتير الآجلة</th>
+            <th className="px-4 py-2 text-right font-bold text-gray-700">إجمالي الدين (جنيه)</th>
+            <th className="px-4 py-2 text-right font-bold text-gray-700">أقرب موعد استحقاق</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(row => (
+            <tr key={row._id} className="border-b">
+              <td className="px-4 py-2 font-semibold text-gray-800">{row.name}</td>
+              <td className="px-4 py-2">{row.debtsCount || 0}</td>
+              <td className="px-4 py-2 text-red-700 font-bold">{(row.totalDebt || 0).toLocaleString()}</td>
+              <td className="px-4 py-2 text-orange-700">{row.nextDueDate ? new Date(row.nextDueDate).toLocaleDateString('ar-EG') : '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
