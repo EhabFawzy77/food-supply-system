@@ -611,7 +611,6 @@ export default function SalesPage() {
                       <CreditCard className="w-5 h-5 mx-auto mb-1" />
                       آجل
                     </button>
-                    <span className="absolute left-0 top-full mt-1 text-xs text-orange-600 bg-orange-50 rounded px-2 py-1 shadow border border-orange-200">سيتم تسجيل الفاتورة كدين للعميل ويمكن تحصيل دفعات لاحقًا</span>
                   </div>
                 </div>
 
