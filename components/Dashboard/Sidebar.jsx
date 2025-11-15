@@ -120,7 +120,7 @@ export default function Sidebar({ user, currentPath }) {
         `}
       >
         {/* Header */}
-        <div className="p-4 flex items-center justify-between border-b border-indigo-700">
+        <div className="p-3 flex items-center justify-between border-b border-indigo-700">
           {isOpen && (
             <div className="flex items-center gap-2 flex-1">
               <div className="w-8 h-8 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
@@ -136,12 +136,12 @@ export default function Sidebar({ user, currentPath }) {
             onClick={() => setIsOpen(!isOpen)}
             className="p-2 hover:bg-indigo-700 rounded-lg transition"
           >
-            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
 
         {/* Menu Items */}
-        <nav className="flex-1 py-6 space-y-1 px-3 overflow-y-auto">
+        <nav className="flex-1 py-4 space-y-1 px-2 overflow-y-auto">
           {menuItems.filter(item => item.show).map((item, idx) => {
             const isActive = currentPath === item.path;
             return (
@@ -149,14 +149,14 @@ export default function Sidebar({ user, currentPath }) {
                 key={idx}
                 href={item.path}
                 className={`
-                  flex items-center gap-3 px-4 py-3 rounded-lg transition group
-                  ${isActive 
-                    ? 'bg-indigo-700 text-white' 
+                  flex items-center gap-3 px-3 py-2 rounded-lg transition group
+                  ${isActive
+                    ? 'bg-indigo-700 text-white'
                     : 'hover:bg-indigo-700/50 text-indigo-100'
                   }
                 `}
               >
-                <item.icon className="w-5 h-5 flex-shrink-0" />
+                <item.icon className="w-4 h-4 flex-shrink-0" />
                 {isOpen && (
                   <span className="font-semibold">{item.label}</span>
                 )}
@@ -171,9 +171,9 @@ export default function Sidebar({ user, currentPath }) {
         </nav>
 
         {/* User Info & Logout */}
-        <div className="p-4 border-t border-indigo-700">
+        <div className="p-3 border-t border-indigo-700">
           {isOpen ? (
-            <div className="mb-3 p-3 bg-indigo-700/50 rounded-lg">
+            <div className="mb-3 p-2 bg-indigo-700/50 rounded-lg">
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center font-bold">
                   {user?.fullName?.charAt(0)}
@@ -200,9 +200,9 @@ export default function Sidebar({ user, currentPath }) {
           
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-red-600 hover:bg-red-700 transition text-white font-semibold"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 transition text-white font-semibold"
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="w-4 h-4" />
             {isOpen && <span>تسجيل الخروج</span>}
           </button>
         </div>

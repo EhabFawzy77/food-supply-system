@@ -63,7 +63,32 @@ export function AppProvider({ children }) {
         // تجاهل الخطأ
       }
     };
+
+    // تنبيهات المخزون المنخفض
+    const checkLowStockAlerts = async () => {
+      try {
+        const res = await fetch('/api/inventory?lowStock=true');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+          data.data.forEach(item => {
+            const productName = item.product?.name || 'منتج غير معروف';
+            const quantity = item.quantity || 0;
+            const minStockLevel = item.minStockLevel || 0;
+            addNotification({
+              type: 'warning',
+              title: 'تنبيه مخزون منخفض',
+              message: `المنتج "${productName}" له كمية ${quantity} وهي أقل من الحد الأدنى ${minStockLevel}. يرجى إعادة التعبئة.`,
+              duration: 8000
+            });
+          });
+        }
+      } catch (err) {
+        // تجاهل الخطأ
+      }
+    };
+
     checkCreditAlerts();
+    checkLowStockAlerts();
   }, []);
 
   const login = async (username, password) => {

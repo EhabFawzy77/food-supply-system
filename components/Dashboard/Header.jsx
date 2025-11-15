@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Bell, Search, Calendar } from 'lucide-react';
+import { Bell, Calendar } from 'lucide-react';
 import { Logo } from '../Logo';
 
 export default function Header({ user }) {
@@ -73,22 +73,17 @@ export default function Header({ user }) {
   };
 
   return (
-    <header className="bg-white shadow-md px-6 py-4 sticky top-0 z-20">
-      <div className="flex items-center justify-between">
+    <header className="bg-white shadow-md px-4 py-3 sticky top-0 z-20">
+      <div className="flex items-center justify-between gap-4">
         {/* Logo */}
         <div className="flex-shrink-0">
           <Logo />
         </div>
 
-        {/* Search */}
-        <div className="flex-1 max-w-xl mx-8">
-          <div className="relative">
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="بحث سريع..."
-              className="w-full pr-12 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            />
+        {/* Center - Welcome Text */}
+        <div className="flex-1 text-center">
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg px-4 py-2 border border-indigo-100">
+            <div className="text-lg font-bold text-indigo-800">مرحباً بك في لوحة التحكم | نظام إدارة التوريدات الغذائية المتكامل</div>
           </div>
         </div>
 
@@ -100,7 +95,7 @@ export default function Header({ user }) {
               <div className="font-semibold text-gray-800">{formatDate(currentTime)}</div>
               <div className="text-gray-600 font-mono">{formatTime(currentTime)}</div>
             </div>
-            <Calendar className="w-5 h-5 text-indigo-600" />
+            <Calendar className="w-4 h-4 text-indigo-600" />
           </div>
 
           {/* Notifications */}
@@ -108,7 +103,7 @@ export default function Header({ user }) {
             <button 
               onClick={() => setShowNotifications(!showNotifications)}
               className="relative p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition">
-              <Bell className="w-6 h-6" />
+              <Bell className="w-5 h-5" />
               {notifications.length > 0 && (
                 <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
                   {notifications.length}
