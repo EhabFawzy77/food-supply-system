@@ -319,6 +319,7 @@ export default function ProductsManagement() {
                     <option value="كرتونة">كرتونة</option>
                     <option value="علبة">علبة</option>
                     <option value="كيس">كيس</option>
+                    <option value="لفه">لفه</option>
                   </select>
                 </div>
 

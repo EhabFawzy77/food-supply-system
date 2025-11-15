@@ -65,7 +65,7 @@ export async function POST(request) {
     // إنشاء سجل الدفعة
     const payment = await Payment.create({
       type: body.type,
-      referenceId: body.referenceId || null, // يمكن أن يكون null للدفعات العامة
+      referenceId: body.referenceId || null,
       referenceNumber: referenceNumber,
       amount: body.amount,
       paymentMethod: body.paymentMethod,
@@ -148,7 +148,8 @@ export async function POST(request) {
       }
     }
 
-    // إذا لم يكن هناك referenceId ولكن تم تمرير customerId/supplierId، فعلى الخادم تحديث ديون الكيان المقابل
+    // إذا لم يكن هناك referenceId ولكن تم تمرير customerId/supplierId
+    // يعني الدفعة مباشرة على العميل/المورد (بدون فاتورة محددة)
     if (!body.referenceId) {
       if (body.type === 'sale' && body.customerId) {
         try {
@@ -158,7 +159,7 @@ export async function POST(request) {
             customer: body.customerId,
             items: [{
               product: null,
-              productName: 'دفعة على دين',
+              productName: 'دفعة على دين سابق',
               quantity: 1,
               unitPrice: body.amount,
               total: body.amount
@@ -174,17 +175,27 @@ export async function POST(request) {
             createdBy: body.createdBy
           });
 
-          await Customer.findByIdAndUpdate(body.customerId, { $inc: { currentDebt: -body.amount } });
+          // تحديث ديون العميل
+          await Customer.findByIdAndUpdate(body.customerId, { 
+            $inc: { currentDebt: -body.amount } 
+          });
+          
+          console.log('✅ تم إنشاء سجل مبيع للدفعة على الدين:', debtPaymentSale.invoiceNumber);
         } catch (err) {
-          console.warn('Failed to create debt payment sale:', err.message);
+          console.warn('⚠️ فشل إنشاء سجل مبيع للدفعة على الدين:', err.message);
         }
       }
 
       if (body.type === 'purchase' && body.supplierId) {
         try {
-          await Supplier.findByIdAndUpdate(body.supplierId, { $inc: { currentDebt: -body.amount } });
+          // تحديث ديون المورد
+          await Supplier.findByIdAndUpdate(body.supplierId, { 
+            $inc: { currentDebt: -body.amount } 
+          });
+          
+          console.log('✅ تم تحديث ديون المورد');
         } catch (err) {
-          console.warn('Failed to update supplier debt after payment:', err.message);
+          console.warn('⚠️ فشل تحديث ديون المورد:', err.message);
         }
       }
     }

@@ -17,7 +17,7 @@ export async function GET(request) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const customer = searchParams.get('customer');
-    const paymentStatus = searchParams.get('paymentStatus'); // 'paid', 'unpaid', 'partial', or null for all
+    const paymentStatus = searchParams.get('paymentStatus');
 
     let query = {};
 
@@ -56,7 +56,8 @@ export async function POST(request) {
     await connectDB();
     
     const body = await request.json();
-    // Basic payload validation to provide clearer errors
+    
+    // Basic payload validation
     if (!body) {
       return NextResponse.json({ success: false, error: 'جسم الطلب فارغ' }, { status: 400 });
     }
@@ -122,7 +123,6 @@ export async function POST(request) {
     if (paymentMethod === 'cash') {
       paymentStatus = 'paid';
     } else {
-      // سيتم تحديده بعد حساب المبالغ الفعلية
       paymentStatus = 'unpaid';
     }
 
@@ -136,7 +136,6 @@ export async function POST(request) {
       });
     } catch (createErr) {
       console.error('Sale.create failed:', createErr);
-      // return validation messages from mongoose if present
       const msg = createErr?.message || 'فشل إنشاء الفاتورة';
       return NextResponse.json({ success: false, error: msg }, { status: 400 });
     }
@@ -148,7 +147,7 @@ export async function POST(request) {
       const stockItems = await Stock.find({
         product: item.product,
         status: 'available'
-      }).sort({ expiryDate: 1 }); // FIFO - أقدم صلاحية أولاً
+      }).sort({ expiryDate: 1 });
       
       for (const stockItem of stockItems) {
         if (remainingQuantity <= 0) break;
@@ -161,7 +160,6 @@ export async function POST(request) {
         
         remainingQuantity -= deductQuantity;
         
-        // حذف السجل إذا أصبحت الكمية صفر
         if (stockItem.quantity - deductQuantity === 0) {
           await Stock.findByIdAndDelete(stockItem._id);
         }
@@ -185,13 +183,15 @@ export async function POST(request) {
       });
     }
     
+    // جلب بيانات العميل
+    const customerRecord = await Customer.findById(body.customer);
+    const previousDebt = customerRecord?.currentDebt || 0;
+    const grandTotal = body.total + previousDebt;
+
     // إنشاء فاتورة البيع
     let createdInvoice = null;
     let invoiceData = null;
     try {
-      const customerRecord = await Customer.findById(body.customer);
-
-      // Enrich items with productName
       const productIds = (body.items || []).map(i => i.product).filter(Boolean);
       let productsMap = {};
       if (productIds.length > 0) {
@@ -226,13 +226,8 @@ export async function POST(request) {
 
       createdInvoice = await Invoice.create(invoiceData);
     } catch (e) {
-      console.error('Error creating invoice snapshot after sale:', e);
+      console.error('Error creating invoice:', e);
     }
-
-    // إعداد معلومات الدفع للاستجابة
-    const customerRecord = await Customer.findById(body.customer);
-    const previousDebt = customerRecord?.currentDebt || 0;
-    const grandTotal = body.total + previousDebt;
 
     // تحديث ديون العميل للآجل
     if (body.paymentMethod === 'credit') {
@@ -243,15 +238,43 @@ export async function POST(request) {
       const paidToPrevious = Math.min(remainingPaid, previousDebt);
       remainingPaid -= paidToPrevious;
 
+      // تسجيل الدفع على الدين السابق كمبيعة منفصلة
+      if (paidToPrevious > 0) {
+        try {
+          await Sale.create({
+            invoiceNumber: `DEBT-${sale.invoiceNumber}`,
+            customer: body.customer,
+            items: [{
+              product: null,
+              productName: 'دفع دين سابق',
+              quantity: 1,
+              unitPrice: paidToPrevious,
+              total: paidToPrevious
+            }],
+            subtotal: paidToPrevious,
+            tax: 0,
+            discount: 0,
+            total: paidToPrevious,
+            paymentStatus: 'paid',
+            paymentMethod: body.paymentMethod,
+            paidAmount: paidToPrevious,
+            notes: `دفع على دين سابق مرتبط بفاتورة ${sale.invoiceNumber}`,
+            createdBy: body.createdBy
+          });
+        } catch (err) {
+          console.warn('Failed to create debt payment sale:', err.message);
+        }
+      }
+
       // ثانياً: دفع الفاتورة الحالية
       const paidToInvoice = Math.min(remainingPaid, invoiceTotal);
       remainingPaid -= paidToInvoice;
       const outstanding = invoiceTotal - paidToInvoice;
 
-      // ثالثاً: إذا كان هناك مبلغ زائد، يتم تحويله لرصيد للعميل (دين سالب)
+      // ثالثاً: إذا كان هناك مبلغ زائد
       const excessPayment = remainingPaid;
 
-      // تحديث ديون العميل: تقليل الديون السابقة + إضافة الديون الجديدة - المبلغ الزائد
+      // تحديث ديون العميل
       const debtChange = -paidToPrevious + outstanding - excessPayment;
 
       try {
@@ -262,14 +285,12 @@ export async function POST(request) {
         console.error('Error updating customer debt:', debtErr);
       }
 
-      // تحديث الفاتورة بالمبالغ الصحيحة (إذا تم إنشاؤها بنجاح)
       if (invoiceData) {
         invoiceData.paidAmount = paidToInvoice;
         invoiceData.previousDebt = previousDebt - paidToPrevious;
         invoiceData.totalOutstanding = outstanding;
       }
 
-      // تحديد حالة الدفع للفاتورة والمبيع
       if (paidToInvoice >= invoiceTotal) {
         paymentStatus = 'paid';
       } else if (paidToInvoice > 0) {
@@ -278,14 +299,12 @@ export async function POST(request) {
         paymentStatus = 'unpaid';
       }
 
-      // تحديث حالة المبيع - للدفع الجزئي، المبلغ المدفوع هو المبيع المكتمل
       await Sale.findByIdAndUpdate(sale._id, {
         paymentStatus,
         paidAmount: paidToInvoice,
-        total: paidToInvoice // تحديث إجمالي المبيع للمبلغ المدفوع فقط
+        total: paidToInvoice
       });
 
-      // تحديث حالة الفاتورة
       if (createdInvoice) {
         await Invoice.findByIdAndUpdate(createdInvoice._id, {
           paymentStatus,
@@ -295,10 +314,36 @@ export async function POST(request) {
         });
       }
     } else {
-      // للكاش: التحقق من الديون السابقة وتسويتها
-      // الكاش يتطلب دفع المبلغ كاملاً دائماً
+      // للكاش: تسوية الديون
+      
+      // تسجيل دفع الدين السابق كمبيعة منفصلة
+      if (previousDebt > 0) {
+        try {
+          await Sale.create({
+            invoiceNumber: `DEBT-${sale.invoiceNumber}`,
+            customer: body.customer,
+            items: [{
+              product: null,
+              productName: 'دفع دين سابق (كاش)',
+              quantity: 1,
+              unitPrice: previousDebt,
+              total: previousDebt
+            }],
+            subtotal: previousDebt,
+            tax: 0,
+            discount: 0,
+            total: previousDebt,
+            paymentStatus: 'paid',
+            paymentMethod: 'cash',
+            paidAmount: previousDebt,
+            notes: `دفع دين سابق (كاش) مرتبط بفاتورة ${sale.invoiceNumber}`,
+            createdBy: body.createdBy
+          });
+        } catch (err) {
+          console.warn('Failed to create debt payment sale for cash:', err.message);
+        }
+      }
 
-      // تحديث ديون العميل - تسوية جميع الديون
       if (previousDebt > 0) {
         try {
           await Customer.findByIdAndUpdate(body.customer, {
@@ -313,18 +358,15 @@ export async function POST(request) {
         invoiceData.paidAmount = grandTotal;
         invoiceData.previousDebt = previousDebt;
         invoiceData.totalOutstanding = 0;
-        // تحديث إجمالي الفاتورة لتشمل الديون السابقة
         invoiceData.total = grandTotal;
       }
 
-      // تحديث المبيع
       await Sale.findByIdAndUpdate(sale._id, {
         paymentStatus: 'paid',
         paidAmount: grandTotal,
-        total: grandTotal // تحديث الإجمالي للمبيع أيضاً
+        total: grandTotal
       });
 
-      // تحديث الفاتورة
       if (createdInvoice) {
         await Invoice.findByIdAndUpdate(createdInvoice._id, {
           paymentStatus: 'paid',
@@ -345,16 +387,14 @@ export async function POST(request) {
     let finalDebt = 0;
 
     if (body.paymentMethod === 'cash') {
-      // الكاش: دائماً يسوي كل الديون
       finalDebt = 0;
     } else {
-      // الآجل: حساب الدين النهائي
       const paidAmount = body.paidAmount || 0;
       const totalOwed = previousDebt + body.total;
       excessPayment = Math.max(0, paidAmount - totalOwed);
       finalDebt = Math.max(0, totalOwed - paidAmount);
       if (excessPayment > 0) {
-        finalDebt = -excessPayment; // رصيد للعميل
+        finalDebt = -excessPayment;
       }
     }
 
