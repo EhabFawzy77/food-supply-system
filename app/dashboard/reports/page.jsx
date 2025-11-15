@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { 
-  BarChart3, TrendingUp, DollarSign, Calendar, 
+import {
+  BarChart3, TrendingUp, DollarSign, Calendar,
   Download, FileText, Users, Package, PieChart
 } from 'lucide-react';
 
@@ -49,10 +49,10 @@ export default function ReportsPage() {
   };
 
   const StatCard = ({ icon: Icon, label, value, color, percentage, trend }) => (
-    <div className={`bg-white rounded-lg shadow-lg p-6 border-r-4 ${color}`}>
-      <div className="flex items-center justify-between mb-3">
-        <div className={`p-3 rounded-lg ${color.replace('border', 'bg').replace('600', '100')}`}>
-          <Icon className={`w-6 h-6 ${color.replace('border', 'text')}`} />
+    <div className={`bg-white rounded-lg shadow-lg p-4 border-r-4 ${color}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className={`p-2 rounded-lg ${color.replace('border', 'bg').replace('600', '100')}`}>
+          <Icon className={`w-5 h-5 ${color.replace('border', 'text')}`} />
         </div>
         {percentage && (
           <div className={`flex items-center gap-1 text-sm font-semibold ${
@@ -63,8 +63,8 @@ export default function ReportsPage() {
           </div>
         )}
       </div>
-      <div className="text-2xl font-bold text-gray-800 mb-1">{value}</div>
-      <div className="text-gray-600 font-semibold">{label}</div>
+      <div className="text-xl font-bold text-gray-800 mb-1">{value}</div>
+      <div className="text-gray-600 font-semibold text-sm">{label}</div>
     </div>
   );
 
@@ -85,7 +85,7 @@ export default function ReportsPage() {
     <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-lg p-4 mb-4">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
               <BarChart3 className="w-8 h-8 text-indigo-600" />
@@ -142,13 +142,13 @@ export default function ReportsPage() {
         {/* Financial Overview */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Sales Breakdown */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="bg-white rounded-lg shadow-lg p-4">
             <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
               <PieChart className="w-6 h-6 text-indigo-600" />
               تفاصيل المبيعات
             </h3>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-green-100 rounded-lg">
                 <div>
                   <div className="text-sm text-gray-600 mb-1">إجمالي المبيعات</div>
                   <div className="text-2xl font-bold text-green-700">
@@ -160,7 +160,7 @@ export default function ReportsPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-red-50 to-red-100 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-red-50 to-red-100 rounded-lg">
                 <div>
                   <div className="text-sm text-gray-600 mb-1">تكلفة البضاعة</div>
                   <div className="text-2xl font-bold text-red-700">
@@ -172,7 +172,7 @@ export default function ReportsPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg">
                 <div>
                   <div className="text-sm text-gray-600 mb-1">صافي الربح</div>
                   <div className="text-2xl font-bold text-blue-700">
@@ -194,13 +194,13 @@ export default function ReportsPage() {
           </div>
 
           {/* Payments Overview */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="bg-white rounded-lg shadow-lg p-4">
             <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
               <DollarSign className="w-6 h-6 text-indigo-600" />
               حالة المدفوعات
             </h3>
             <div className="space-y-3">
-              <div className="p-4 bg-green-50 rounded-lg border-r-4 border-green-500">
+              <div className="p-3 bg-green-50 rounded-lg border-r-4 border-green-500">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-gray-700 font-semibold">مبيعات كاش</span>
                   <span className="text-green-700 font-bold">{(salesStats?.cashSales || 0).toLocaleString()} جنيه</span>
@@ -213,7 +213,7 @@ export default function ReportsPage() {
                 </div>
               </div>
 
-              <div className="p-4 bg-orange-50 rounded-lg border-r-4 border-orange-500">
+              <div className="p-3 bg-orange-50 rounded-lg border-r-4 border-orange-500">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-gray-700 font-semibold">مبيعات آجلة</span>
                   <span className="text-orange-700 font-bold">{(salesStats?.creditSales || 0).toLocaleString()} جنيه</span>
@@ -226,7 +226,7 @@ export default function ReportsPage() {
                 </div>
               </div>
 
-              <div className="p-4 bg-red-50 rounded-lg border-r-4 border-red-500">
+              <div className="p-3 bg-red-50 rounded-lg border-r-4 border-red-500">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-gray-700 font-semibold">مدفوعات معلقة</span>
                   <span className="text-red-700 font-bold">{(paymentStats?.pendingPayments || 0).toLocaleString()} جنيه</span>
@@ -242,92 +242,8 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* Summary Card */}
-        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow-lg p-8 text-white mb-6">
-          <h3 className="text-2xl font-bold mb-6">ملخص الأداء</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <div className="text-sm opacity-80 mb-2">إجمالي المعاملات</div>
-              <div className="text-3xl font-bold">{salesStats?.transactions || 0}</div>
-            </div>
-            <div>
-              <div className="text-sm opacity-80 mb-2">متوسط الربح لكل معاملة</div>
-              <div className="text-3xl font-bold">
-                {salesStats?.transactions > 0 
-                  ? ((salesStats?.totalProfit || 0) / salesStats.transactions).toLocaleString() 
-                  : 0} جنيه
-              </div>
-            </div>
-            <div>
-              <div className="text-sm opacity-80 mb-2">معدل الربحية</div>
-              <div className="text-3xl font-bold">{profitMargin.toFixed(1)}%</div>
-            </div>
-          </div>
-        </div>
 
-        {/* تقرير الفواتير الآجلة والمديونية */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <FileText className="w-6 h-6 text-orange-600" />
-            تقرير الفواتير الآجلة والمديونية للعملاء
-          </h3>
-          <CreditReportTable />
-        </div>
       </div>
-    </div>
-  );
-}
-
-// مكون لجلب وعرض تقرير الفواتير الآجلة والمديونية لكل عميل
-function CreditReportTable() {
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCreditReport = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch('/api/customers?withDebts=true');
-        const data = await res.json();
-        if (data.success && Array.isArray(data.data)) {
-          setRows(data.data);
-        } else {
-          setRows([]);
-        }
-      } catch {
-        setRows([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCreditReport();
-  }, []);
-
-  if (loading) return <div className="text-xs text-gray-500">جاري التحميل...</div>;
-  if (!rows.length) return <div className="text-xs text-gray-500">لا يوجد عملاء عليهم ديون آجل حالياً</div>;
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-4 py-2 text-right font-bold text-gray-700">العميل</th>
-            <th className="px-4 py-2 text-right font-bold text-gray-700">عدد الفواتير الآجلة</th>
-            <th className="px-4 py-2 text-right font-bold text-gray-700">إجمالي الدين (جنيه)</th>
-            <th className="px-4 py-2 text-right font-bold text-gray-700">أقرب موعد استحقاق</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(row => (
-            <tr key={row._id} className="border-b">
-              <td className="px-4 py-2 font-semibold text-gray-800">{row.name}</td>
-              <td className="px-4 py-2">{row.debtsCount || 0}</td>
-              <td className="px-4 py-2 text-red-700 font-bold">{(row.totalDebt || 0).toLocaleString()}</td>
-              <td className="px-4 py-2 text-orange-700">{row.nextDueDate ? new Date(row.nextDueDate).toLocaleDateString('ar-EG') : '—'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 }

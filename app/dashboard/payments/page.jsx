@@ -89,10 +89,10 @@ export default function PaymentsPage() {
   };
 
   const StatCard = ({ icon: Icon, label, value, color, trend, sublabel }) => (
-    <div className={`bg-white rounded-lg shadow-lg p-6 border-r-4 ${color}`}>
-      <div className="flex items-center justify-between mb-3">
-        <div className={`p-3 rounded-lg ${color.replace('border', 'bg').replace('600', '100')}`}>
-          <Icon className={`w-6 h-6 ${color.replace('border', 'text')}`} />
+    <div className={`bg-white rounded-lg shadow-lg p-4 border-r-4 ${color}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className={`p-2 rounded-lg ${color.replace('border', 'bg').replace('600', '100')}`}>
+          <Icon className={`w-5 h-5 ${color.replace('border', 'text')}`} />
         </div>
         {trend && (
           <div className={`flex items-center gap-1 text-sm font-semibold ${
@@ -103,10 +103,10 @@ export default function PaymentsPage() {
           </div>
         )}
       </div>
-      <div className="text-2xl font-bold text-gray-800 mb-1">
+      <div className="text-xl font-bold text-gray-800 mb-1">
         {value.toLocaleString()} جنيه
       </div>
-      <div className="text-gray-600 font-semibold">{label}</div>
+      <div className="text-gray-600 font-semibold text-sm">{label}</div>
       {sublabel && <div className="text-xs text-gray-500 mt-1">{sublabel}</div>}
     </div>
   );
@@ -126,7 +126,7 @@ export default function PaymentsPage() {
     <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-lg p-4 mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <CreditCard className="w-8 h-8 text-indigo-600" />
@@ -174,26 +174,9 @@ export default function PaymentsPage() {
           />
         </div>
 
-        {/* Net Cash Flow */}
-        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow-lg p-6 mb-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm font-semibold mb-2 opacity-90">صافي التدفق النقدي</div>
-              <div className="text-4xl font-bold">
-                {((stats.received || 0) - (stats.paid || 0)).toLocaleString()} جنيه
-              </div>
-              <div className="text-sm mt-2 opacity-80">
-                {(stats.received || 0) > (stats.paid || 0) ? 'فائض نقدي' : 'عجز نقدي'}
-              </div>
-            </div>
-            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
-              <DollarSign className="w-12 h-12" />
-            </div>
-          </div>
-        </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-lg p-4 mb-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
               <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -267,19 +250,19 @@ export default function PaymentsPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">النوع</th>
-                  <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">المرجع</th>
-                  <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">رقم الفاتورة</th>
-                  <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">من/إلى</th>
-                  <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">المبلغ</th>
-                  <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">طريقة الدفع</th>
-                  <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">التاريخ</th>
+                  <th className="px-4 py-2 text-right text-sm font-bold text-gray-700">النوع</th>
+                  <th className="px-4 py-2 text-right text-sm font-bold text-gray-700">المرجع</th>
+                  <th className="px-4 py-2 text-right text-sm font-bold text-gray-700">رقم الفاتورة</th>
+                  <th className="px-4 py-2 text-right text-sm font-bold text-gray-700">من/إلى</th>
+                  <th className="px-4 py-2 text-right text-sm font-bold text-gray-700">المبلغ</th>
+                  <th className="px-4 py-2 text-right text-sm font-bold text-gray-700">طريقة الدفع</th>
+                  <th className="px-4 py-2 text-right text-sm font-bold text-gray-700">التاريخ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredPayments.map((payment) => (
                   <tr key={payment._id} className="hover:bg-gray-50 transition">
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3">
                       {payment.type === 'sale' ? (
                         <div className="flex items-center gap-2">
                           <TrendingUp className="w-5 h-5 text-green-600" />
@@ -344,7 +327,7 @@ export default function PaymentsPage() {
           </div>
 
           {filteredPayments.length === 0 && (
-            <div className="text-center py-12">
+            <div className="text-center py-8">
               <CreditCard className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500">لا توجد مدفوعات</p>
             </div>

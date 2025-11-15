@@ -161,7 +161,7 @@ export default function SuppliersPage() {
     <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
       <div className="max-w-7xl mx-auto">
         {/* Header & Stats */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-lg p-4 mb-4">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <Truck className="w-8 h-8 text-indigo-600" />
@@ -180,7 +180,7 @@ export default function SuppliersPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-lg">
+            <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-3 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <Truck className="w-8 h-8 opacity-80" />
                 <span className="text-3xl font-bold">{suppliers.length}</span>
@@ -188,7 +188,7 @@ export default function SuppliersPage() {
               <div className="text-sm font-semibold">إجمالي الموردين</div>
             </div>
 
-            <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 rounded-lg">
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-3 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <AlertCircle className="w-8 h-8 opacity-80" />
                 <span className="text-3xl font-bold">{suppliersWithDebt}</span>
@@ -196,7 +196,7 @@ export default function SuppliersPage() {
               <div className="text-sm font-semibold">موردين لديهم مستحقات</div>
             </div>
 
-            <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-4 rounded-lg">
+            <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-3 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <DollarSign className="w-8 h-8 opacity-80" />
                 <span className="text-2xl font-bold">{totalDebt.toLocaleString()}</span>
@@ -223,7 +223,7 @@ export default function SuppliersPage() {
         {/* Suppliers Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredSuppliers.map((supplier) => (
-            <div key={supplier._id} className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition">
+            <div key={supplier._id} className="bg-white rounded-lg shadow-lg p-4 hover:shadow-xl transition">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
@@ -308,7 +308,7 @@ export default function SuppliersPage() {
         {/* Add/Edit Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-8 max-w-2xl w-full max-h-screen overflow-y-auto">
+            <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-screen overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">
                   {editingSupplier ? 'تعديل المورد' : 'إضافة مورد جديد'}
@@ -401,7 +401,7 @@ export default function SuppliersPage() {
         {/* Payment Modal */}
         {showPaymentModal && selectedSupplier && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-8 max-w-md w-full">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full">
               <h2 className="text-2xl font-bold text-gray-800 mb-4">تسجيل دفعة للمورد</h2>
               
               <div className="mb-6 p-4 bg-gray-50 rounded-lg">

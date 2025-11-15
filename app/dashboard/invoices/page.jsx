@@ -171,14 +171,14 @@ export default function InvoicesPage() {
   };
 
   const StatCard = ({ icon: Icon, label, value, color }) => (
-    <div className={`bg-white rounded-lg shadow-lg p-6 border-r-4 ${color}`}>
-      <div className="flex items-center justify-between mb-3">
-        <div className={`p-3 rounded-lg ${color.replace('border', 'bg').replace('600', '100')}`}>
-          <Icon className={`w-6 h-6 ${color.replace('border', 'text')}`} />
+    <div className={`bg-white rounded-lg shadow-lg p-4 border-r-4 ${color}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className={`p-2 rounded-lg ${color.replace('border', 'bg').replace('600', '100')}`}>
+          <Icon className={`w-5 h-5 ${color.replace('border', 'text')}`} />
         </div>
       </div>
-      <div className="text-2xl font-bold text-gray-800 mb-1">{value}</div>
-      <div className="text-gray-600 font-semibold">{label}</div>
+      <div className="text-xl font-bold text-gray-800 mb-1">{value}</div>
+      <div className="text-gray-600 font-semibold text-sm">{label}</div>
     </div>
   );
 
@@ -186,7 +186,7 @@ export default function InvoicesPage() {
     return (
       <div className="min-h-screen bg-gray-100" dir="rtl">
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="bg-white rounded-lg shadow-lg p-8">
+          <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="text-center">
               <div className="inline-block animate-spin">
                 <FileText className="w-12 h-12 text-blue-600" />
@@ -246,7 +246,7 @@ export default function InvoicesPage() {
         </div>
 
         {/* Search and Filter */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-lg p-4 mb-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
               <Search className="absolute right-3 top-3 w-5 h-5 text-gray-400" />
@@ -292,7 +292,7 @@ export default function InvoicesPage() {
         {/* Invoices Table */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           {invoices.length === 0 ? (
-            <div className="p-8 text-center">
+            <div className="p-6 text-center">
               <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600 text-lg mb-2">لا توجد فواتير</p>
               <p className="text-gray-500 text-sm">
@@ -312,23 +312,23 @@ export default function InvoicesPage() {
               <table className="w-full">
                 <thead className="bg-gray-100 border-b border-gray-300">
                   <tr>
-                    <th className="px-6 py-3 text-right font-semibold text-gray-800">رقم الفاتورة</th>
-                    <th className="px-6 py-3 text-right font-semibold text-gray-800">العميل</th>
-                    <th className="px-6 py-3 text-right font-semibold text-gray-800">التاريخ</th>
-                    <th className="px-6 py-3 text-right font-semibold text-gray-800">المبلغ</th>
-                    <th className="px-6 py-3 text-right font-semibold text-gray-800">الحالة</th>
-                    <th className="px-6 py-3 text-right font-semibold text-gray-800">الإجراءات</th>
+                    <th className="px-4 py-2 text-right font-semibold text-gray-800">رقم الفاتورة</th>
+                    <th className="px-4 py-2 text-right font-semibold text-gray-800">العميل</th>
+                    <th className="px-4 py-2 text-right font-semibold text-gray-800">التاريخ</th>
+                    <th className="px-4 py-2 text-right font-semibold text-gray-800">المبلغ</th>
+                    <th className="px-4 py-2 text-right font-semibold text-gray-800">الحالة</th>
+                    <th className="px-4 py-2 text-right font-semibold text-gray-800">الإجراءات</th>
                   </tr>
                 </thead>
                 <tbody>
                   {invoices.map((invoice) => (
                     <tr key={invoice._id} className="border-b border-gray-200 hover:bg-gray-50 transition">
-                      <td className="px-6 py-4 font-semibold text-gray-800">{invoice.invoiceNumber}</td>
-                      <td className="px-6 py-4 text-gray-700">{invoice.customerName}</td>
-                      <td className="px-6 py-4 text-gray-700">{formatDate(invoice.invoiceDate)}</td>
-                      <td className="px-6 py-4 text-gray-700">{formatPrice(invoice.total)}</td>
-                      <td className="px-6 py-4">{getStatusBadge(invoice.paymentStatus)}</td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3 font-semibold text-gray-800">{invoice.invoiceNumber}</td>
+                      <td className="px-4 py-3 text-gray-700">{invoice.customerName}</td>
+                      <td className="px-4 py-3 text-gray-700">{formatDate(invoice.invoiceDate)}</td>
+                      <td className="px-4 py-3 text-gray-700">{formatPrice(invoice.total)}</td>
+                      <td className="px-4 py-3">{getStatusBadge(invoice.paymentStatus)}</td>
+                      <td className="px-4 py-3">
                         <div className="flex gap-2">
                           <Link href={`/dashboard/invoices/${invoice._id}`}>
                             <button className="p-2 hover:bg-blue-100 rounded-lg transition" title="عرض">
