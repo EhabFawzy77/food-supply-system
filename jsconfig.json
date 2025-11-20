@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    },
+    "skipLibCheck": true,
+    "types": [],
+    "resolveJsonModule": true,
+    "allowJs": true
+  },
+  "include": ["**/*.js", "**/*.jsx"],
+  "exclude": ["node_modules/**", ".next/**"]
+}
