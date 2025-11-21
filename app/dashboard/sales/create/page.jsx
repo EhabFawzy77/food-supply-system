@@ -49,7 +49,7 @@ export default function SalesPage() {
       name: '',
       quantity: 1,
       sellingPrice: 0,
-      unit: 'لتر'
+      unit: 'قطعة'
     }]);
   }, []);
 
@@ -214,8 +214,7 @@ export default function SalesPage() {
           _id: product._id,
           name: product.name,
           sellingPrice: product.sellingPrice,
-          unit: product.unit,
-          image: product.image
+          unit: product.unit
         };
       }
       return item;
@@ -474,7 +473,7 @@ export default function SalesPage() {
       name: '',
       quantity: 1,
       sellingPrice: 0,
-      unit: 'لتر'
+      unit: 'قطعة'
     }]);
     setSelectedCustomer(null);
     setPaidAmount('');
@@ -506,7 +505,7 @@ export default function SalesPage() {
           name: '',
           quantity: 1,
           sellingPrice: 0,
-          unit: 'لتر'
+          unit: 'قطعة'
         }];
         setCart(newCart);
 
@@ -709,7 +708,6 @@ export default function SalesPage() {
               <thead>
                 <tr className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
                   <th className="border border-indigo-400 p-4 text-lg font-bold w-16">حذف</th>
-                  <th className="border border-indigo-400 p-4 text-lg font-bold w-20">الصورة</th>
                   <th className="border border-indigo-400 p-4 text-lg font-bold">اسم المنتج</th>
                   <th className="border border-indigo-400 p-4 text-lg font-bold">الكمية</th>
                   <th className="border border-indigo-400 p-4 text-lg font-bold">سعر الواحد</th>
@@ -726,16 +724,6 @@ export default function SalesPage() {
                       >
                         <Trash2 size={20} />
                       </button>
-                    </td>
-                    <td className="border border-indigo-300 p-3 text-center">
-                      <img
-                        src={item.image || '/images/product-placeholder.png'}
-                        alt={item.name || 'منتج'}
-                        className="w-12 h-12 object-cover rounded-lg mx-auto border border-gray-200"
-                        onError={(e) => {
-                          e.target.src = '/images/product-placeholder.png';
-                        }}
-                      />
                     </td>
                     <td className="border border-indigo-300 p-3 relative">
                       <div className="relative product-search-container">
@@ -785,21 +773,9 @@ export default function SalesPage() {
                                   (activeProductSearch === item._id ? (productSuggestionIndices[activeProductSearch] ?? -1) : -1) === index ? 'bg-blue-500 text-white' : 'hover:bg-indigo-50'
                                 }`}
                               >
-                                <div className="flex items-center gap-3">
-                                  <img
-                                    src={product.image || '/images/product-placeholder.png'}
-                                    alt={product.name}
-                                    className="w-10 h-10 object-cover rounded border border-gray-200"
-                                    onError={(e) => {
-                                      e.target.src = '/images/product-placeholder.png';
-                                    }}
-                                  />
-                                  <div className="flex-1">
-                                    <div className="font-semibold">{product.name}</div>
-                                    <div className="text-sm text-gray-600">
-                                      السعر: {product.sellingPrice} جنيه - الوحدة: {product.unit}
-                                    </div>
-                                  </div>
+                                <div className="font-semibold">{product.name}</div>
+                                <div className="text-sm text-gray-600">
+                                  السعر: {product.sellingPrice} جنيه - الوحدة: {product.unit}
                                 </div>
                               </div>
                             ))}
@@ -869,7 +845,7 @@ export default function SalesPage() {
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan="6" className="p-4">
+                  <td colSpan="5" className="p-4">
                     <div className="border-2 border-indigo-500 rounded-xl p-0.5 bg-gradient-to-r from-indigo-50 to-purple-50">
                       {/* Calculations */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">

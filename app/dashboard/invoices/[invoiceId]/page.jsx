@@ -50,9 +50,9 @@ export default function InvoiceDetailPage() {
   const handlePrint = async () => {
     const { generateInvoiceHTML } = await import('../../../../lib/utils/invoice/template');
     const html = generateInvoiceHTML(invoice, {
-      name: 'مركز الدهانات',
+      name: 'شركة توريد الأغذية',
       phone: '+20 100 000 0000',
-      email: 'info@paintcenter.com',
+      email: 'info@foodsupply.com',
       address: 'القاهرة، مصر'
     });
 

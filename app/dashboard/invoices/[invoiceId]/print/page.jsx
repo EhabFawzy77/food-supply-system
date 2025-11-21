@@ -350,7 +350,7 @@ export default function InvoicePrintPage() {
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-gray-600 font-semibold text-lg">
-                    مركز الدهانات
+                    شركة توريد الأغذية
                   </p>
                   <p className="text-gray-500 text-sm">+20 100 000 0000</p>
                 </div>
@@ -641,7 +641,7 @@ export default function InvoicePrintPage() {
             {/* Footer */}
             <div className="border-t-2 border-gray-300 mt-8 pt-8 text-center">
               <p className="text-gray-600 text-sm">
-                تم إصدار هذه الفاتورة بواسطة نظام إدارة الدهانات
+                تم إصدار هذه الفاتورة بواسطة نظام إدارة الأغذية
               </p>
               <p className="text-gray-500 text-xs mt-2">
                 {formatDate(new Date())} - تم الطباعة في

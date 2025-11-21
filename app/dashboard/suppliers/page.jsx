@@ -148,7 +148,7 @@ export default function SuppliersPage() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6" dir="rtl">
       <div className="max-w-7xl mx-auto">
         {/* Header & Stats */}
-        <div className="backdrop-blur-xl bg-white/30 rounded-2xl shadow-2xl border border-white/20 p-6 mb-8 animate-fadeIn">
+        <div className="backdrop-blur-xl bg-white/80 rounded-2xl shadow-2xl border border-white/20 p-6 mb-8 animate-fadeIn">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg">

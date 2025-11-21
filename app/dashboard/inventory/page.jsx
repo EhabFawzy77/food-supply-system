@@ -184,7 +184,7 @@ export default function InventoryPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4" dir="rtl">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-white/30 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6 mb-6">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6 mb-6">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg">
@@ -239,7 +239,7 @@ export default function InventoryPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white/30 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
                 <Package className="w-6 h-6 text-white" />
@@ -253,7 +253,7 @@ export default function InventoryPage() {
             <div className="w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full mt-3 opacity-20"></div>
           </div>
 
-          <div className="bg-white/30 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-gradient-to-br from-red-500 to-rose-600 rounded-xl shadow-lg">
                 <TrendingDown className="w-6 h-6 text-white" />
@@ -299,7 +299,7 @@ export default function InventoryPage() {
             const isLowStock = quantity <= minStockLevel;
 
             return (
-              <div key={item._id} className={`group bg-white/30 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-500 p-6 hover:-translate-y-2 ${
+              <div key={item._id} className={`group bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-500 p-6 hover:-translate-y-2 ${
                 isLowStock ? 'ring-2 ring-red-200' : ''
               }`}>
                 <div className="flex items-start justify-between mb-4">
@@ -379,7 +379,7 @@ export default function InventoryPage() {
         </div>
 
         {filteredInventory.length === 0 && (
-          <div className="bg-white/30 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-12 text-center">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-12 text-center">
             <div className="p-4 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl mb-6 inline-block">
               <Package className="w-12 h-12 text-gray-400" />
             </div>

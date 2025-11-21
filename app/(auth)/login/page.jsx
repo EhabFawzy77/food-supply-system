@@ -6,12 +6,12 @@ import { useApp } from '../../../contexts/AppContext';
 import { LogoWithText } from '../../../components/Logo';
 
 export default function LoginPage() {
-  const { login, user, loading, success, error } = useApp();
+  const { login, user, loading, success, error: showError } = useApp();
   const [formData, setFormData] = useState({
     username: '',
     password: ''
   });
-  const [errorMsg, setErrorMsg] = useState('');
+  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   // إذا كان المستخدم مسجل دخول، نوجهه للوحة التحكم
@@ -24,7 +24,7 @@ export default function LoginPage() {
   }, []);
 
   const handleLogin = async () => {
-    setErrorMsg('');
+    setError('');
     setIsLoading(true);
 
     try {
@@ -33,17 +33,17 @@ export default function LoginPage() {
       console.log('نتيجة تسجيل الدخول:', result);
       
       if (!result.success) {
-        const errorMessageText = result.error || 'حدث خطأ غير معروف';
-        setErrorMsg(errorMessageText);
-        error(errorMessageText, '❌ فشل تسجيل الدخول');
+        const errorMsg = result.error || 'حدث خطأ غير معروف';
+        setError(errorMsg);
+        showError(errorMsg, '❌ فشل تسجيل الدخول');
       } else {
         success('تم تسجيل الدخول بنجاح!', '✓ مرحباً');
       }
     } catch (err) {
       console.error('خطأ في تسجيل الدخول:', err);
-      const errorMessageText = 'حدث خطأ في الاتصال';
-      setErrorMsg(errorMessageText);
-      error(errorMessageText, '❌ خطأ في الاتصال');
+      const errorMsg = 'حدث خطأ في الاتصال';
+      setError(errorMsg);
+      showError(errorMsg, '❌ خطأ في الاتصال');
     } finally {
       setIsLoading(false);
     }
@@ -68,20 +68,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center p-4 relative">
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 animate-fadeIn z-10">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black opacity-20"></div>
+      
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 animate-fadeIn">
         {/* Logo & Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <LogoWithText />
           </div>
-          <p className="text-gray-600 mt-4">مركز الدهانات</p>
+          <p className="text-gray-600 mt-4">شركة التوريدات الغذائية</p>
         </div>
 
         {/* Error Message */}
-        {errorMsg && (
+        {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-600 text-sm text-center">{errorMsg}</p>
+            <p className="text-red-600 text-sm text-center">{error}</p>
           </div>
         )}
 

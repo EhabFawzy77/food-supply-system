@@ -137,7 +137,7 @@ export default function DashboardHome() {
 
 
         {/* Quick Actions */}
-        <div className="bg-white/30 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6 mb-6">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6 mb-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-lg">
               <Zap className="w-5 h-5 text-white" />
@@ -190,7 +190,7 @@ export default function DashboardHome() {
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* Recent Sales */}
-          <div className="xl:col-span-2 bg-white/30 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
+          <div className="xl:col-span-2 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg">
@@ -246,7 +246,7 @@ export default function DashboardHome() {
           </div>
 
           {/* Alerts */}
-          <div className="bg-white/30 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-2 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg">
                 <AlertTriangle className="w-5 h-5 text-white" />
@@ -359,9 +359,9 @@ export default function DashboardHome() {
                 </div>
               </Link>
             </div>
-   
           </div>
         </div>
+
       </div>
     </div>
   );

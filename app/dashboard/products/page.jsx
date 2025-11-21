@@ -10,20 +10,15 @@ export default function ProductsManagement() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
-  const [imagePreview, setImagePreview] = useState(null);
   
   const [formData, setFormData] = useState({
     name: '',
     category: '',
-    unit: 'لتر',
+    unit: 'كجم',
     purchasePrice: '',
     sellingPrice: '',
     minStockLevel: '',
-    supplier: '',
-    image: null,
-    color: '',
-    size: '',
-    brand: ''
+    supplier: ''
   });
 
   useEffect(() => {
@@ -72,28 +67,10 @@ export default function ProductsManagement() {
     const method = editingProduct ? 'PUT' : 'POST';
 
     try {
-      const formDataToSend = new FormData();
-
-      // إضافة البيانات النصية
-      formDataToSend.append('name', formData.name);
-      formDataToSend.append('category', formData.category);
-      formDataToSend.append('unit', formData.unit);
-      formDataToSend.append('purchasePrice', formData.purchasePrice);
-      formDataToSend.append('sellingPrice', formData.sellingPrice);
-      formDataToSend.append('minStockLevel', formData.minStockLevel || '');
-      formDataToSend.append('supplier', formData.supplier || '');
-      formDataToSend.append('color', formData.color || '');
-      formDataToSend.append('size', formData.size || '');
-      formDataToSend.append('brand', formData.brand || '');
-
-      // إضافة الصورة إذا كانت موجودة
-      if (formData.image) {
-        formDataToSend.append('image', formData.image);
-      }
-
       const res = await fetch(url, {
         method,
-        body: formDataToSend
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
       });
 
       const data = await res.json();
@@ -119,13 +96,8 @@ export default function ProductsManagement() {
       purchasePrice: product.purchasePrice,
       sellingPrice: product.sellingPrice,
       minStockLevel: product.minStockLevel || '',
-      supplier: product.supplier?._id || '',
-      image: null,
-      color: product.color || '',
-      size: product.size || '',
-      brand: product.brand || ''
+      supplier: product.supplier?._id || ''
     });
-    setImagePreview(product.image || null);
     setShowModal(true);
   };
 
@@ -148,30 +120,13 @@ export default function ProductsManagement() {
     setFormData({
       name: '',
       category: '',
-      unit: 'لتر',
+      unit: 'كجم',
       purchasePrice: '',
       sellingPrice: '',
       minStockLevel: '',
-      supplier: '',
-      image: null,
-      color: '',
-      size: '',
-      brand: ''
+      supplier: ''
     });
     setEditingProduct(null);
-    setImagePreview(null);
-  };
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData({ ...formData, image: file });
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target.result);
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   const filteredProducts = products.filter(p =>
@@ -196,10 +151,10 @@ export default function ProductsManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6 relative" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6" dir="rtl">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="backdrop-blur-xl bg-white/30 rounded-2xl shadow-2xl border border-white/20 p-6 mb-8 animate-fadeIn">
+        <div className="backdrop-blur-xl bg-white/80 rounded-2xl shadow-2xl border border-white/20 p-6 mb-8 animate-fadeIn">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg">
@@ -287,30 +242,6 @@ export default function ProductsManagement() {
                     {profitMargin(product.purchasePrice, product.sellingPrice)}%
                   </span>
                 </div>
-                {(product.color || product.size || product.brand) && (
-                  <div className="py-2 border-b border-gray-100">
-                    <div className="grid grid-cols-3 gap-2 text-xs">
-                      {product.color && (
-                        <div className="text-center">
-                          <span className="text-gray-500">اللون:</span>
-                          <div className="font-semibold text-gray-800">{product.color}</div>
-                        </div>
-                      )}
-                      {product.size && (
-                        <div className="text-center">
-                          <span className="text-gray-500">الحجم:</span>
-                          <div className="font-semibold text-gray-800">{product.size}</div>
-                        </div>
-                      )}
-                      {product.brand && (
-                        <div className="text-center">
-                          <span className="text-gray-500">الماركة:</span>
-                          <div className="font-semibold text-gray-800">{product.brand}</div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
                 {product.supplier && (
                   <div className="flex justify-between items-center py-2 border-b border-gray-100">
                     <span className="text-sm">المورد:</span>
@@ -374,22 +305,14 @@ export default function ProductsManagement() {
 
                   <div>
                     <label className="block text-gray-700 mb-2 font-semibold">التصنيف *</label>
-                    <select
+                    <input
+                      type="text"
                       required
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm"
-                    >
-                      <option value="">اختر التصنيف</option>
-                      <option value="دهانات داخلية">دهانات داخلية</option>
-                      <option value="دهانات خارجية">دهانات خارجية</option>
-                      <option value="أدوات الدهان">أدوات الدهان</option>
-                      <option value="مواد كيميائية">مواد كيميائية</option>
-                      <option value="ورق الصنفرة">ورق الصنفرة</option>
-                      <option value="فرش الدهان">فرش الدهان</option>
-                      <option value="أسطوانات الرذاذ">أسطوانات الرذاذ</option>
-                      <option value="أخرى">أخرى</option>
-                    </select>
+                      placeholder="مثال: حبوب، زيوت، سكريات"
+                    />
                   </div>
 
                   <div>
@@ -462,74 +385,6 @@ export default function ProductsManagement() {
                         </option>
                       ))}
                     </select>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-gray-700 mb-2 font-semibold">اللون</label>
-                      <input
-                        type="text"
-                        value={formData.color}
-                        onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm"
-                        placeholder="مثال: أبيض، أزرق"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-700 mb-2 font-semibold">الحجم</label>
-                      <input
-                        type="text"
-                        value={formData.size}
-                        onChange={(e) => setFormData({ ...formData, size: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm"
-                        placeholder="مثال: 1 لتر، 5 كجم"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-700 mb-2 font-semibold">الماركة</label>
-                      <input
-                        type="text"
-                        value={formData.brand}
-                        onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm"
-                        placeholder="مثال: جوتن، كيمي"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-gray-700 mb-2 font-semibold">صورة المنتج</label>
-                    <div className="space-y-3">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                      />
-                      {imagePreview && (
-                        <div className="flex justify-center">
-                          <img
-                            src={imagePreview}
-                            alt="معاينة الصورة"
-                            className="w-32 h-32 object-cover rounded-lg border-2 border-indigo-200 shadow-lg"
-                          />
-                        </div>
-                      )}
-                      {editingProduct && editingProduct.image && !imagePreview && (
-                        <div className="flex justify-center">
-                          <img
-                            src={editingProduct.image}
-                            alt="الصورة الحالية"
-                            className="w-32 h-32 object-cover rounded-lg border-2 border-indigo-200 shadow-lg"
-                            onError={(e) => {
-                              e.target.src = '/images/product-placeholder.png';
-                            }}
-                          />
-                        </div>
-                      )}
-                    </div>
                   </div>
 
                   <div className="flex gap-4 pt-6">

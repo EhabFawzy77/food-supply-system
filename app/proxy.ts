@@ -1,6 +1,5 @@
 // proxy.ts
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -24,7 +23,7 @@ const protectedPaths = {
   '/api/purchases': ['admin', 'manager']
 };
 
-export function middleware(request: NextRequest) {
+export function middleware(request) {
   const { pathname } = request.nextUrl;
 
   // السماح بالمسارات العامة
@@ -63,15 +62,9 @@ export function middleware(request: NextRequest) {
 
   try {
     // فك تشفير التوكن (بدون مكتبة لتجنب الأخطاء)
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
+    const payload = JSON.parse(
+      Buffer.from(token.split('.')[1], 'base64').toString()
     );
-    const payload = JSON.parse(jsonPayload);
     
     // التحقق من الصلاحيات
     for (const [path, roles] of Object.entries(protectedPaths)) {

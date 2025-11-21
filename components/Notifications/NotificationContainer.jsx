@@ -2,8 +2,7 @@
 
 import { useApp } from '../../contexts/AppContext';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
-import { useState } from 'react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function NotificationContainer() {
   const { notifications, removeNotification } = useApp();
@@ -98,6 +97,14 @@ function Notification({
   isExiting
 }) {
   const duration = notification.duration || 5000;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onRemove(notification.id);
+    }, duration);
+
+    return () => clearTimeout(timer);
+  }, [notification.id, onRemove, duration]);
 
   return (
     <div

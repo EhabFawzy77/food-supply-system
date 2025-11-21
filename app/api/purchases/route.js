@@ -15,7 +15,7 @@ export async function GET(request) {
     await connectDB();
     const auth = await authenticate(request);
     if (!auth) {
-      return NextResponse.json({ success: false, error: 'غير مصرح' }, { status: 401 });
+      return NextResponse.json({ success: false, error: 'غير مصرح', statusCode: 401 }, { status: 401 });
     }
     
     const { searchParams } = new URL(request.url);
@@ -59,10 +59,21 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     await connectDB();
+    
+    console.log('[POST /api/purchases] Starting purchase creation');
+    
     const auth = await authenticate(request);
     if (!auth) {
-      return NextResponse.json({ success: false, error: 'غير مصرح' }, { status: 401 });
+      console.error('[POST /api/purchases] Authentication failed - returning 401');
+      return NextResponse.json({ 
+        success: false, 
+        error: 'انتهت صلاحية جلستك. يرجى تسجيل الدخول مجددا',
+        statusCode: 401,
+        code: 'TOKEN_EXPIRED'
+      }, { status: 401 });
     }
+    
+    console.log('[POST /api/purchases] Auth successful for user:', auth.username);
     
     const body = await request.json();
     
@@ -149,67 +160,4 @@ export async function POST(request) {
       { status: 400 }
     );
   }
-}
-
-// PUT - تحديث مشتريات
-export async function PUT(request) {
- try {
-   await connectDB();
-   const auth = await authenticate(request);
-   if (!auth) {
-     return NextResponse.json({ success: false, error: 'غير مصرح' }, { status: 401 });
-   }
-
-   const { searchParams } = new URL(request.url);
-   const id = searchParams.get('id');
-   if (!id) {
-     return NextResponse.json({ success: false, error: 'معرف المشتريات مطلوب' }, { status: 400 });
-   }
-
-   const body = await request.json();
-
-   // جلب المشتريات الحالية
-   const currentPurchase = await Purchase.findById(id);
-   if (!currentPurchase) {
-     return NextResponse.json({ success: false, error: 'المشتريات غير موجودة' }, { status: 404 });
-   }
-
-   // حساب الإجماليات إذا لم تكن موجودة
-   if (!body.subtotal || !body.total) {
-     const subtotal = body.items.reduce((sum, item) => {
-       return sum + (parseFloat(item.quantity) * parseFloat(item.unitPrice));
-     }, 0);
-
-     body.subtotal = subtotal;
-     body.total = subtotal + (parseFloat(body.tax) || 0);
-   }
-
-   // تحديث ديون المورد - إعادة الدين القديم وتطبيق الجديد
-   const oldDebt = currentPurchase.paymentStatus === 'unpaid' ? currentPurchase.total :
-                    currentPurchase.paymentStatus === 'partial' ? currentPurchase.total - (currentPurchase.paidAmount || 0) : 0;
-
-   const newDebt = body.paymentStatus === 'unpaid' ? body.total :
-                    body.paymentStatus === 'partial' ? body.total - (body.paidAmount || 0) : 0;
-
-   const debtChange = newDebt - oldDebt;
-
-   if (debtChange !== 0) {
-     await Supplier.findByIdAndUpdate(currentPurchase.supplier, {
-       $inc: { currentDebt: debtChange }
-     });
-   }
-
-   // تحديث المشتريات
-   const updatedPurchase = await Purchase.findByIdAndUpdate(id, body, { new: true });
-
-   return NextResponse.json(
-     { success: true, data: updatedPurchase },
-     { status: 200 }
-   );
- } catch (error) {
-   return NextResponse.json(
-     { success: false, error: error.message },
-     { status: 400 }
-   );
- }
 }

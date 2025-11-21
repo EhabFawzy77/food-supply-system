@@ -161,7 +161,7 @@ export default function SalesPage() {
     <div className="min-h-screen bg-gray-50 p-4" dir="rtl">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-white/30 rounded-xl shadow-md p-4 mb-4">
+        <div className="bg-white rounded-xl shadow-md p-4 mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-indigo-100 rounded-lg">
@@ -210,7 +210,7 @@ export default function SalesPage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-white/30 rounded-xl shadow-md p-4 mb-4">
+        <div className="bg-white rounded-xl shadow-md p-4 mb-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             {/* Search */}
             <div className="relative">
@@ -263,7 +263,7 @@ export default function SalesPage() {
         </div>
 
         {/* Sales Table */}
-        <div className="bg-white/30 rounded-xl shadow-md overflow-hidden">
+        <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
             <h3 className="font-bold text-gray-800">قائمة المبيعات ({filteredSales.length})</h3>
           </div>

@@ -2,13 +2,11 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./app/*"]
     },
     "skipLibCheck": true,
-    "types": [],
-    "resolveJsonModule": true,
-    "allowJs": true
+    "types": []
   },
   "include": ["**/*.js", "**/*.jsx"],
-  "exclude": ["node_modules/**", ".next/**"]
+  "exclude": ["node_modules/**"]
 }

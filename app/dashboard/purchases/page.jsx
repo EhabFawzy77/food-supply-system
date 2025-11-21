@@ -136,6 +136,15 @@ export default function PurchasesPage() {
       const suppliersData = await suppliersRes.json();
       const productsData = await productsRes.json();
 
+      // التحقق من أخطاء المصادقة والجلسة المنتهية
+      if (purchasesRes.status === 401 || purchasesData.statusCode === 401 || purchasesData.code === 'TOKEN_EXPIRED') {
+        console.warn('Token expired, redirecting to login');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('currentUser');
+        window.location.href = '/login';
+        return;
+      }
+
       if (purchasesData.success) setPurchases(purchasesData.data || []);
       if (suppliersData.success) setSuppliers(suppliersData.data || []);
       if (productsData.success) setProducts(productsData.data || []);
@@ -151,6 +160,14 @@ export default function PurchasesPage() {
     
     if (!formData.supplier || formData.items.some(i => !i.product || !i.quantity || !i.unitPrice)) {
       alert('أكمل جميع البيانات المطلوبة (المورد، المنتج، الكمية، السعر)');
+      return;
+    }
+
+    // التحقق من وجود التوكن
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      alert('جلسة انتهت الرجاء تسجيل الدخول مجددا');
+      router.push('/login');
       return;
     }
 
@@ -173,7 +190,6 @@ export default function PurchasesPage() {
 
     const url = editingPurchase ? `/api/purchases/${editingPurchase._id}` : '/api/purchases';
     const method = editingPurchase ? 'PUT' : 'POST';
-    const token = localStorage.getItem('authToken');
 
     try {
       const res = await fetch(url, {
@@ -200,6 +216,16 @@ export default function PurchasesPage() {
         setShowModal(false);
       } else {
         console.error('خطأ في حفظ المشتريات:', data.error);
+        
+        // التحقق من أخطاء المصادقة والجلسة المنتهية
+        if (data.statusCode === 401 || data.code === 'TOKEN_EXPIRED' || res.status === 401) {
+          alert('انتهت صلاحية جلستك. سيتم إعادة توجيهك لصفحة تسجيل الدخول');
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('currentUser');
+          window.location.href = '/login';
+        } else {
+          alert(`خطأ: ${data.error || 'فشل حفظ المشتريات'}`);
+        }
       }
     } catch (error) {
       console.error('خطأ في حفظ المشتريات:', error);
@@ -304,16 +330,10 @@ export default function PurchasesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 relative" dir="rtl">
-      <div
-        className="absolute inset-0 bg-cover bg-center opacity-20"
-        style={{
-          backgroundImage: "url('/image/10.jpg')"
-        }}
-      ></div>
-      <div className="max-w-7xl mx-auto relative z-10">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4" dir="rtl">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-white/30 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6 mb-6">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6 mb-6">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg">

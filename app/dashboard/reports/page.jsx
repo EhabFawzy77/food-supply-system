@@ -164,6 +164,59 @@ export default function ReportsPage() {
   const profitMargin = salesStats?.profitMargin || 0;
 
   const handleExport = () => {
+    // Uncomment the following after installing html2canvas
+    /*
+    import('html2canvas').then(({ default: html2canvas }) => {
+      const reportDiv = document.createElement('div');
+      reportDiv.innerHTML = `
+        <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px; background: white; color: black; width: 800px;">
+          <h1 style="text-align: center;">تقرير الإحصائيات الشامل</h1>
+          <p>الفترة: ${periods.find(p => p.value === period)?.label}</p>
+          <p>تاريخ التقرير: ${new Date().toLocaleDateString('ar-EG')}</p>
+          <h2>المبيعات:</h2>
+          <p>إجمالي المبيعات: ${(salesStats?.totalSales || 0).toLocaleString()} جنيه</p>
+          <p>صافي الربح: ${(salesStats?.totalProfit || 0).toLocaleString()} جنيه</p>
+          <p>عدد المعاملات: ${salesStats?.transactions || 0}</p>
+          <p>مبيعات كاش: ${(salesStats?.cashSales || 0).toLocaleString()} جنيه</p>
+          <p>مبيعات آجلة: ${(salesStats?.creditSales || 0).toLocaleString()} جنيه</p>
+          <p>تكلفة البضاعة: ${(salesStats?.totalCost || 0).toLocaleString()} جنيه</p>
+          <p>هامش الربح: ${profitMargin.toFixed(1)}%</p>
+          <h2>المدفوعات:</h2>
+          <p>مدفوعات معلقة: ${(paymentStats?.pendingPayments || 0).toLocaleString()} جنيه</p>
+          <h2>المشتريات:</h2>
+          <p>إجمالي المشتريات: ${(purchaseStats?.totalPurchases || 0).toLocaleString()} جنيه</p>
+        </div>
+      `;
+      reportDiv.style.position = 'absolute';
+      reportDiv.style.left = '-9999px';
+      document.body.appendChild(reportDiv);
+
+      html2canvas(reportDiv).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const doc = new jsPDF();
+        const imgWidth = 210;
+        const pageHeight = 295;
+        const imgHeight = canvas.height * imgWidth / canvas.width;
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft >= 0) {
+          position = heightLeft - imgHeight;
+          doc.addPage();
+          doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
+
+        doc.save('تقرير-الإحصائيات.pdf');
+        document.body.removeChild(reportDiv);
+      });
+    });
+    */
+
+    // Fallback to CSV
     const exportData = [
       {
         'الفئة': 'المبيعات',
@@ -192,7 +245,7 @@ export default function ReportsPage() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6" dir="rtl">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="backdrop-blur-xl bg-white/30 rounded-2xl shadow-2xl border border-white/20 p-6 mb-8 animate-fadeIn">
+        <div className="backdrop-blur-xl bg-white/80 rounded-2xl shadow-2xl border border-white/20 p-6 mb-8 animate-fadeIn">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg">
@@ -280,7 +333,7 @@ export default function ReportsPage() {
         {/* Financial Overview */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Sales Breakdown */}
-          <div className="backdrop-blur-xl bg-white/30 rounded-2xl shadow-2xl border border-white/20 p-6 animate-fadeIn">
+          <div className="backdrop-blur-xl bg-white/80 rounded-2xl shadow-2xl border border-white/20 p-6 animate-fadeIn">
             <h3 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-6 flex items-center gap-3">
               <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg shadow-lg">
                 <PieChart className="w-5 h-5 text-white" />
@@ -333,7 +386,7 @@ export default function ReportsPage() {
           </div>
 
           {/* Payments Overview */}
-          <div className="backdrop-blur-xl bg-white/30 rounded-2xl shadow-2xl border border-white/20 p-6 animate-fadeIn">
+          <div className="backdrop-blur-xl bg-white/80 rounded-2xl shadow-2xl border border-white/20 p-6 animate-fadeIn">
             <h3 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-6 flex items-center gap-3">
               <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg shadow-lg">
                 <DollarSign className="w-5 h-5 text-white" />

@@ -1,10 +1,17 @@
 // app/(auth)/layout.tsx
 import type { Metadata } from "next";
+import { Cairo } from "next/font/google";
 import "../globals.css";
 
+const cairo = Cairo({
+  subsets: ["arabic", "latin"],
+  weight: ["400", "600", "700"],
+  variable: "--font-cairo",
+});
+
 export const metadata: Metadata = {
-  title: "تسجيل الدخول - نظام إدارة مركز الدهانات",
-  description: "تسجيل الدخول لنظام إدارة مركز الدهانات",
+  title: "تسجيل الدخول - نظام إدارة التوريدات",
+  description: "تسجيل الدخول لنظام إدارة التوريدات الغذائية",
 };
 
 export default function AuthLayout({
@@ -14,7 +21,7 @@ export default function AuthLayout({
 }>) {
   // لا تضع <html> و <body> هنا - يتم التعامل معها في app/layout.js
   return (
-    <div className="font-sans antialiased min-h-screen">
+    <div className={`${cairo.variable} font-sans antialiased min-h-screen`}>
       {children}
     </div>
   );

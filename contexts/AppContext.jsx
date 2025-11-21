@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 const AppContext = createContext();
@@ -10,6 +10,51 @@ export function AppProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState([]);
+  const refreshTimeoutRef = useRef(null);
+  const isRefreshingRef = useRef(false);
+
+  // دالة تحديث التوكن تلقائياً
+  const scheduleTokenRefresh = (token) => {
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
+    }
+
+    // تحديث التوكن كل 23 ساعة (قبل انتهاء الصلاحية بساعة)
+    const refreshInterval = 23 * 60 * 60 * 1000;
+    
+    refreshTimeoutRef.current = setTimeout(async () => {
+      if (isRefreshingRef.current) return;
+      
+      try {
+        isRefreshingRef.current = true;
+        console.log('[AppContext] 🔄 Refreshing token...');
+        
+        const response = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          localStorage.setItem('authToken', data.token);
+          console.log('[AppContext] ✅ Token refreshed successfully');
+          
+          // جدولة التحديث التالي
+          scheduleTokenRefresh(data.token);
+        } else {
+          console.log('[AppContext] ❌ Failed to refresh token:', data.error);
+        }
+      } catch (error) {
+        console.error('[AppContext] Error refreshing token:', error);
+      } finally {
+        isRefreshingRef.current = false;
+      }
+    }, refreshInterval);
+
+    console.log('[AppContext] ⏰ Token refresh scheduled in 23 hours');
+  };
 
   useEffect(() => {
     // تحميل بيانات المستخدم من localStorage
@@ -19,6 +64,8 @@ export function AppProvider({ children }) {
         const userData = localStorage.getItem('currentUser');
         if (token && userData) {
           setUser(JSON.parse(userData));
+          // جدولة تحديث التوكن
+          scheduleTokenRefresh(token);
         }
       } catch (error) {
         console.error('Error loading user:', error);
@@ -97,6 +144,13 @@ export function AppProvider({ children }) {
 
     checkCreditAlerts();
     checkLowStockAlerts();
+
+    // Cleanup
+    return () => {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+    };
   }, []);
 
   const login = async (username, password) => {
@@ -116,6 +170,9 @@ export function AppProvider({ children }) {
           localStorage.setItem('currentUser', JSON.stringify(data.data.user));
           setUser(data.data.user);
           
+          // جدولة تحديث التوكن
+          scheduleTokenRefresh(data.data.token);
+          
           // التوجيه للوحة التحكم
           console.log('جاري التوجيه للوحة التحكم...');
           window.location.href = '/dashboard';
@@ -134,6 +191,12 @@ export function AppProvider({ children }) {
   };
 
   const logout = () => {
+    // إيقاف تحديث التوكن
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
+    }
+    isRefreshingRef.current = false;
+    
     localStorage.removeItem('authToken');
     localStorage.removeItem('currentUser');
     setUser(null);
@@ -152,15 +215,15 @@ export function AppProvider({ children }) {
   };
 
   const addNotification = (notification) => {
-    const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const id = Date.now().toString();
     const duration = notification.duration || 5000;
     setNotifications(prev => [...prev, { id, ...notification }]);
-
+    
     // إزالة تلقائية بعد المدة المحددة
     setTimeout(() => {
       removeNotification(id);
     }, duration);
-
+    
     return id;
   };
 

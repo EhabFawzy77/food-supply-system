@@ -3,7 +3,7 @@
 
 'use client';
 
-import { useApp } from '../../../contexts/AppContext';
+import { useApp } from '../../contexts/AppContext';
 import { useState } from 'react';
 
 export default function TestNotificationsPage() {

@@ -16,23 +16,22 @@ export function Logo() {
         <circle cx="20" cy="20" r="18" fill="#4F46E5" opacity="0.1" />
         <circle cx="20" cy="20" r="18" stroke="#4F46E5" strokeWidth="1.5" />
 
-        {/* Paint Brush Symbol */}
+        {/* Fork and Knife (Food Symbol) */}
         <g transform="translate(8, 8)">
-          {/* Brush Handle */}
-          <rect x="2" y="8" width="2" height="10" fill="#4F46E5" rx="1" />
-  
-          {/* Brush Head */}
-          <rect x="1" y="2" width="4" height="6" fill="#10B981" rx="0.5" />
-  
-          {/* Brush Bristles */}
-          <line x1="0.5" y1="2" x2="0.5" y2="8" stroke="#059669" strokeWidth="0.8" strokeLinecap="round" />
-          <line x1="1.5" y1="2" x2="1.5" y2="8" stroke="#059669" strokeWidth="0.8" strokeLinecap="round" />
-          <line x1="2.5" y1="2" x2="2.5" y2="8" stroke="#059669" strokeWidth="0.8" strokeLinecap="round" />
-          <line x1="3.5" y1="2" x2="3.5" y2="8" stroke="#059669" strokeWidth="0.8" strokeLinecap="round" />
-          <line x1="4.5" y1="2" x2="4.5" y2="8" stroke="#059669" strokeWidth="0.8" strokeLinecap="round" />
-  
-          {/* Paint Drop */}
-          <ellipse cx="12" cy="6" rx="2" ry="3" fill="#10B981" opacity="0.8" />
+          {/* Fork */}
+          <line x1="3" y1="2" x2="3" y2="18" stroke="#4F46E5" strokeWidth="1.2" strokeLinecap="round" />
+          <circle cx="2" cy="1" r="0.8" fill="#4F46E5" />
+          <line x1="1" y1="6" x2="0.5" y2="14" stroke="#4F46E5" strokeWidth="0.8" strokeLinecap="round" />
+          <line x1="3" y1="6" x2="3" y2="14" stroke="#4F46E5" strokeWidth="0.8" strokeLinecap="round" />
+          <line x1="5" y1="6" x2="5.5" y2="14" stroke="#4F46E5" strokeWidth="0.8" strokeLinecap="round" />
+
+          {/* Leaf (Growth/Supply) */}
+          <path
+            d="M 12 2 Q 14 5 13 10 Q 12 15 10 16 Q 12 15 13 10 Q 14 5 12 2"
+            fill="#10B981"
+            opacity="0.8"
+          />
+          <line x1="12" y1="2" x2="10" y2="16" stroke="#059669" strokeWidth="0.6" strokeLinecap="round" />
         </g>
 
         {/* Accents */}
@@ -43,10 +42,10 @@ export function Logo() {
       {/* Logo Text */}
       <div className="flex flex-col">
         <div className="text-lg font-bold text-gray-800 leading-tight">
-          دهانات
+          توريد
         </div>
         <div className="text-xs text-indigo-600 font-semibold">
-          مركز
+          الغذاء
         </div>
       </div>
     </div>
@@ -69,23 +68,22 @@ export function LogoWithText() {
         <circle cx="20" cy="20" r="18" fill="#4F46E5" opacity="0.1" />
         <circle cx="20" cy="20" r="18" stroke="#4F46E5" strokeWidth="1.5" />
 
-        {/* Paint Brush Symbol */}
+        {/* Fork and Knife (Food Symbol) */}
         <g transform="translate(8, 8)">
-          {/* Brush Handle */}
-          <rect x="2" y="8" width="2" height="10" fill="#4F46E5" rx="1" />
+          {/* Fork */}
+          <line x1="3" y1="2" x2="3" y2="18" stroke="#4F46E5" strokeWidth="1.2" strokeLinecap="round" />
+          <circle cx="2" cy="1" r="0.8" fill="#4F46E5" />
+          <line x1="1" y1="6" x2="0.5" y2="14" stroke="#4F46E5" strokeWidth="0.8" strokeLinecap="round" />
+          <line x1="3" y1="6" x2="3" y2="14" stroke="#4F46E5" strokeWidth="0.8" strokeLinecap="round" />
+          <line x1="5" y1="6" x2="5.5" y2="14" stroke="#4F46E5" strokeWidth="0.8" strokeLinecap="round" />
 
-          {/* Brush Head */}
-          <rect x="1" y="2" width="4" height="6" fill="#10B981" rx="0.5" />
-
-          {/* Brush Bristles */}
-          <line x1="0.5" y1="2" x2="0.5" y2="8" stroke="#059669" strokeWidth="0.8" strokeLinecap="round" />
-          <line x1="1.5" y1="2" x2="1.5" y2="8" stroke="#059669" strokeWidth="0.8" strokeLinecap="round" />
-          <line x1="2.5" y1="2" x2="2.5" y2="8" stroke="#059669" strokeWidth="0.8" strokeLinecap="round" />
-          <line x1="3.5" y1="2" x2="3.5" y2="8" stroke="#059669" strokeWidth="0.8" strokeLinecap="round" />
-          <line x1="4.5" y1="2" x2="4.5" y2="8" stroke="#059669" strokeWidth="0.8" strokeLinecap="round" />
-
-          {/* Paint Drop */}
-          <ellipse cx="12" cy="6" rx="2" ry="3" fill="#10B981" opacity="0.8" />
+          {/* Leaf (Growth/Supply) */}
+          <path
+            d="M 12 2 Q 14 5 13 10 Q 12 15 10 16 Q 12 15 13 10 Q 14 5 12 2"
+            fill="#10B981"
+            opacity="0.8"
+          />
+          <line x1="12" y1="2" x2="10" y2="16" stroke="#059669" strokeWidth="0.6" strokeLinecap="round" />
         </g>
 
         {/* Accents */}
@@ -96,10 +94,10 @@ export function LogoWithText() {
       {/* Text Section */}
       <div>
         <div className="text-xl font-bold text-gray-800">
-          نظام إدارة الدهانات
+          نظام توريد الغذاء
         </div>
         <div className="text-xs text-gray-600">
-          إدارة مركز الدهانات
+          إدارة سلسلة التوريد الغذائية
         </div>
       </div>
     </div>
@@ -120,23 +118,22 @@ export function LogoIcon() {
       <circle cx="20" cy="20" r="18" fill="#4F46E5" opacity="0.1" />
       <circle cx="20" cy="20" r="18" stroke="#4F46E5" strokeWidth="1.5" />
 
-      {/* Paint Brush Symbol */}
+      {/* Fork and Knife (Food Symbol) */}
       <g transform="translate(8, 8)">
-        {/* Brush Handle */}
-        <rect x="2" y="8" width="2" height="10" fill="#4F46E5" rx="1" />
+        {/* Fork */}
+        <line x1="3" y1="2" x2="3" y2="18" stroke="#4F46E5" strokeWidth="1.2" strokeLinecap="round" />
+        <circle cx="2" cy="1" r="0.8" fill="#4F46E5" />
+        <line x1="1" y1="6" x2="0.5" y2="14" stroke="#4F46E5" strokeWidth="0.8" strokeLinecap="round" />
+        <line x1="3" y1="6" x2="3" y2="14" stroke="#4F46E5" strokeWidth="0.8" strokeLinecap="round" />
+        <line x1="5" y1="6" x2="5.5" y2="14" stroke="#4F46E5" strokeWidth="0.8" strokeLinecap="round" />
 
-        {/* Brush Head */}
-        <rect x="1" y="2" width="4" height="6" fill="#10B981" rx="0.5" />
-
-        {/* Brush Bristles */}
-        <line x1="0.5" y1="2" x2="0.5" y2="8" stroke="#059669" strokeWidth="0.8" strokeLinecap="round" />
-        <line x1="1.5" y1="2" x2="1.5" y2="8" stroke="#059669" strokeWidth="0.8" strokeLinecap="round" />
-        <line x1="2.5" y1="2" x2="2.5" y2="8" stroke="#059669" strokeWidth="0.8" strokeLinecap="round" />
-        <line x1="3.5" y1="2" x2="3.5" y2="8" stroke="#059669" strokeWidth="0.8" strokeLinecap="round" />
-        <line x1="4.5" y1="2" x2="4.5" y2="8" stroke="#059669" strokeWidth="0.8" strokeLinecap="round" />
-
-        {/* Paint Drop */}
-        <ellipse cx="12" cy="6" rx="2" ry="3" fill="#10B981" opacity="0.8" />
+        {/* Leaf (Growth/Supply) */}
+        <path
+          d="M 12 2 Q 14 5 13 10 Q 12 15 10 16 Q 12 15 13 10 Q 14 5 12 2"
+          fill="#10B981"
+          opacity="0.8"
+        />
+        <line x1="12" y1="2" x2="10" y2="16" stroke="#059669" strokeWidth="0.6" strokeLinecap="round" />
       </g>
 
       {/* Accents */}

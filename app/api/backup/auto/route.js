@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import connectDB from '../../../../lib/mongodb.js';
+import connectDB from '../../../../lib/mongodb';
 import User from '../../../../lib/models/User.js';
 import Product from '../../../../lib/models/Product.js';
 import Stock from '../../../../lib/models/Stock.js';

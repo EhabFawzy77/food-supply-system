@@ -75,7 +75,7 @@ export default function Header({ user }) {
         {/* Center - Welcome Text */}
         <div className="flex-1 text-center">
           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg px-4 py-2 border border-indigo-100">
-            <div className="text-lg font-bold text-indigo-800">مرحباً بك في لوحة التحكم | نظام إدارة مركز الدهانات المتكامل</div>
+            <div className="text-lg font-bold text-indigo-800">مرحباً بك في لوحة التحكم | نظام إدارة التوريدات الغذائية المتكامل</div>
           </div>
         </div>
 
