@@ -60,6 +60,12 @@ export default function ProductsManagement() {
       return;
     }
 
+    // Prepare data for submission
+    const submitData = {
+      ...formData,
+      supplier: formData.supplier === '' ? null : formData.supplier
+    };
+
     const url = editingProduct
       ? `/api/products/${editingProduct._id}`
       : '/api/products';
@@ -70,7 +76,7 @@ export default function ProductsManagement() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(submitData)
       });
 
       const data = await res.json();
