@@ -3,17 +3,17 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import connectDB from '../../../lib/mongodb';
-import User from '../../../lib/models/User';
-import Product from '../../../lib/models/Product';
-import Stock from '../../../lib/models/Stock';
-import Sale from '../../../lib/models/Sale';
-import Purchase from '../../../lib/models/Purchase';
-import Customer from '../../../lib/models/Customer';
-import Supplier from '../../../lib/models/Supplier';
-import Payment from '../../../lib/models/Payment';
-import Expense from '../../../lib/models/Expense';
-import StockMovement from '../../../lib/models/StockMovement';
+import connectDB from '../../../../lib/mongodb';
+import User from '../../../../lib/models/User';
+import Product from '../../../../lib/models/Product';
+import Stock from '../../../../lib/models/Stock';
+import Sale from '../../../../lib/models/Sale';
+import Purchase from '../../../../lib/models/Purchase';
+import Customer from '../../../../lib/models/Customer';
+import Supplier from '../../../../lib/models/Supplier';
+import Payment from '../../../../lib/models/Payment';
+import Expense from '../../../../lib/models/Expense';
+import StockMovement from '../../../../lib/models/StockMovement';
 export async function POST(request) {
   try {
     await connectDB();
