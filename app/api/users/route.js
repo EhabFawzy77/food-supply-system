@@ -1,7 +1,7 @@
 // app/api/users/route.js
 import { NextResponse } from 'next/server';
-import connectDB from '../../../lib/mongodb.js';
-import User from '../../../lib/models/User.js';
+import connectDB from '../../../../lib/mongodb.js';
+import User from '../../../../lib/models/User.js';
 
 // GET - جلب جميع المستخدمين
 export async function GET(request) {
@@ -29,9 +29,9 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     await connectDB();
-    
+
     const body = await request.json();
-    
+
     // التحقق من البيانات المطلوبة
     if (!body.username || !body.password || !body.fullName) {
       return NextResponse.json(
@@ -39,17 +39,17 @@ export async function POST(request) {
         { status: 400 }
       );
     }
-    
+
     // التحقق من وجود المستخدم
     const existingUser = await User.findOne({ username: body.username });
-    
+
     if (existingUser) {
       return NextResponse.json(
         { success: false, error: 'اسم المستخدم موجود بالفعل' },
         { status: 400 }
       );
     }
-    
+
     // إنشاء مستخدم جديد
     const user = await User.create({
       username: body.username,
@@ -60,10 +60,10 @@ export async function POST(request) {
       role: body.role || 'user',
       isActive: body.isActive !== undefined ? body.isActive : true
     });
-    
+
     return NextResponse.json(
-      { 
-        success: true, 
+      {
+        success: true,
         message: 'تم إنشاء المستخدم بنجاح',
         data: {
           id: user._id,
