@@ -1,5 +1,5 @@
 // proxy.ts
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -23,7 +23,7 @@ const protectedPaths = {
   '/api/purchases': ['admin', 'manager']
 };
 
-export function middleware(request) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // السماح بالمسارات العامة
