@@ -4,7 +4,7 @@ import {
   BarChart3, TrendingUp, DollarSign, Calendar,
   Download, FileText, Users, Package, PieChart
 } from 'lucide-react';
-import { jsPDF } from 'jspdf';
+ // import { jsPDF } from 'jspdf';
 // import html2canvas from 'html2canvas'; // Uncomment after installing: npm install html2canvas
 import { exportUtils } from '../../../lib/utils/export';
 
